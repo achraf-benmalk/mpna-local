@@ -4,6 +4,7 @@
 #define JACOBI_H
 
 #include <vector>
+#include <cmath>
 
 #include "CSRMatrix.h"
 
