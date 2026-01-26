@@ -1,150 +1,108 @@
-# HPL Project - Colleague Handoff Document
-## Presentation: January 28, 2026 (15 minutes)
+# Salut ! Voici où j'en suis pour le projet HPL
+
+## Ce que j'ai fait aujourd'hui
+
+J'ai pas mal avancé sur HPL. J'ai installé et compilé le benchmark sur mon PC (WSL Ubuntu) et j'ai déjà fait tourner quelques tests.
+
+### Résultats obtenus
+
+| N | NB | P×Q | Temps (s) | GFLOPS | Statut |
+|---|----|----|-----------|--------|--------|
+| 10000 | 192 | 2×4 | 42.5 | 15.7 | PASSED |
+| 20000 | 192 | 2×4 | 130.0 | 41.0 | PASSED |
+
+C'est sur mon laptop (Ryzen 9, 32GB RAM) donc les perfs sont modestes mais ça marche et c'est valide pour la présentation.
+
+### Ce que j'ai compris sur l'algo
+
+En gros HPL ça résout un système linéaire Ax = b avec une matrice dense. L'algorithme c'est :
+
+1. **Décomposition LU** : on factorise A = L × U (triangulaire inférieure × triangulaire supérieure)
+2. **Pivotage partiel** : on échange les lignes pour mettre les plus grandes valeurs en pivot (stabilité numérique)
+3. **Distribution 2D block-cyclic** : la matrice est répartie sur les processus en blocs qui "cyclent" sur une grille P×Q
+
+Le but c'est de mesurer les GFLOPS max que la machine peut atteindre. C'est ce benchmark qui est utilisé pour le classement TOP500.
 
 ---
 
-## What's Been Done (Day 1)
+## Pour la répartition du travail
 
-### Theory & Understanding
-- Learned HPL algorithm (LU decomposition with partial pivoting)
-- Understood parallelization (2D block-cyclic distribution)
-- Learned key parameters: N (problem size), NB (block size), P×Q (process grid)
+On a 15 minutes de présentation. Je te propose plusieurs options, dis-moi ce qui te convient :
 
-### HPL Setup & First Results
-- Built HPL on WSL (Ubuntu) with OpenBLAS
-- Ran baseline experiments
+### Option A : Moi algo, toi résultats
+- **Moi (slides 1-8, ~8 min)** : Intro, c'est quoi HPL, l'algorithme LU, la parallélisation
+- **Toi (slides 9-14, ~7 min)** : Setup expérimental, résultats, graphes, analyse, conclusion
 
-**Results so far:**
-| Run | N | NB | P×Q | Time(s) | GFLOPS | Status |
-|-----|---|----|-----|---------|--------|--------|
-| 1 | 10000 | 192 | 2×4 | 42.5 | 15.7 | PASSED |
-| 2 | 20000 | 192 | 2×4 | 130.0 | 41.0 | PASSED |
+### Option B : Toi algo, moi résultats
+- **Toi (slides 1-8, ~8 min)** : Intro, c'est quoi HPL, l'algorithme, parallélisation
+- **Moi (slides 9-14, ~7 min)** : Setup, résultats, graphes, conclusion
 
----
+Je peux te filer toutes mes notes sur l'algo si tu préfères cette partie.
 
-## Work Split for Presentation
-
-### Achraf (Slides 1-8, ~8 min speaking)
-- Slide 1: Title
-- Slide 2: Agenda
-- Slides 3-4: What is HPL? (purpose, TOP500)
-- Slides 5-6: Algorithm (LU decomposition)
-- Slides 7-8: Parallelization (2D block-cyclic)
-
-### You (Slides 9-14, ~7 min speaking)
-- Slide 9: Experimental setup (platform specs)
-- Slides 10-12: Results (graphs, tables)
-- Slide 13: Analysis (efficiency, observations)
-- Slide 14: Conclusions
+### Option C : On fait les slides ensemble
+On se retrouve demain et on fait tout ensemble, chacun prend la moitié à présenter à l'oral.
 
 ---
 
-## What You Need To Do
+## Ce qu'il reste à faire
 
-### Option A: Run More Experiments (if you have time/machine)
+### Expériences
+- [ ] N = 30000 (~10-15 min de calcul)
+- [ ] N = 40000 (~20-30 min de calcul)
+- [ ] Tester NB = 128 et NB = 256 (pour comparer)
 
-**Remaining experiments needed:**
+Je peux les lancer ce soir ou demain matin.
 
-| Priority | N | NB | Why |
-|----------|---|----|-----|
-| 1 | 30000 | 192 | Scaling test |
-| 2 | 40000 | 192 | Larger = better efficiency |
-| 3 | 30000 | 128 | Block size comparison |
-| 4 | 30000 | 256 | Block size comparison |
+### Slides à créer
+1. **Titre** : HPL Benchmark - Projet MPNA
+2. **Agenda**
+3-4. **C'est quoi HPL ?** : Objectif, TOP500, problème mathématique Ax=b
+5-6. **L'algorithme** : Décomposition LU, pivotage, schéma
+7-8. **Parallélisation** : Distribution 2D block-cyclic, paramètres N/NB/P×Q
+9. **Setup expérimental** : Specs de la machine, logiciels utilisés
+10-12. **Résultats** : Tableau + graphe GFLOPS vs N
+13. **Analyse** : Observations, efficacité
+14. **Conclusion**
 
-**Commands (if you set up HPL yourself):**
-```bash
-# Change N in HPL.dat
-sed -i 's/^[0-9]*        Ns/30000        Ns/' HPL.dat
-mpirun -np 8 ./xhpl | tee result_N30000.txt
-grep "WR" result_N30000.txt
+### Infos sur notre plateforme (pour slide 9)
 ```
-
-### Option B: Just Make the Slides (if I run experiments)
-
-I can finish experiments tonight/tomorrow and send you:
-- Final results table
-- Raw data for graphs
-
-You focus on:
-1. Creating slides 9-14
-2. Making graphs (GFLOPS vs N, etc.)
-3. Documenting platform specs
-
----
-
-## Platform Specs to Document (for Slide 9)
-
-Fill this in for our setup:
-```
-Platform: ASUS Zephyrus G14 (2020) via WSL2
-CPU: AMD Ryzen 9 4900HS (8 cores, 16 threads)
-RAM: 32 GB
-OS: Ubuntu on WSL2
-MPI: OpenMPI (apt package)
-BLAS: OpenBLAS (apt package)
+Machine : ASUS Zephyrus G14 (2020) via WSL2
+CPU : AMD Ryzen 9 4900HS (8 cœurs, 16 threads)
+RAM : 32 Go
+OS : Ubuntu (WSL2)
+MPI : OpenMPI
+BLAS : OpenBLAS
 ```
 
 ---
 
-## Key Concepts You Should Know (for Q&A)
+## Questions qu'on pourrait nous poser
 
-### What is HPL?
-- Solves Ax = b (dense linear system)
-- Measures GFLOPS (billions of floating-point operations per second)
-- Used to rank TOP500 supercomputers
+J'ai préparé quelques réponses au cas où :
 
-### How does it work?
-1. **LU Decomposition**: Split matrix A into L (lower triangular) × U (upper triangular)
-2. **Partial Pivoting**: Swap rows to use largest values (numerical stability)
-3. **Parallel**: Matrix distributed across processes in 2D block-cyclic pattern
+**Pourquoi LU et pas une autre méthode ?**
+> LU est efficace pour les systèmes denses, complexité O(n³), et se parallélise bien.
 
-### Key Parameters
-- **N**: Matrix size (bigger = better efficiency, more RAM needed)
-- **NB**: Block size (sweet spot 128-256)
-- **P×Q**: Process grid (P ≤ Q recommended)
+**C'est quoi le pivotage partiel ?**
+> On sélectionne le plus grand élément de la colonne comme pivot pour éviter les divisions par des petits nombres (erreurs numériques).
 
-### Performance Formula
-```
-Efficiency = Achieved GFLOPS / Theoretical Peak GFLOPS × 100%
+**Pourquoi distribution cyclique ?**
+> Pour l'équilibrage de charge. Comme on traite la matrice colonne par colonne, la partie restante rétrécit. Avec le cyclique, tous les processus continuent à avoir du travail.
 
-Memory needed = N² × 8 bytes
-FLOPS count = (2/3) × N³
-```
+**C'est quoi un bon score d'efficacité ?**
+> 70-80% c'est bien, >80% c'est excellent. L'efficacité = GFLOPS obtenus / GFLOPS théoriques max.
 
 ---
 
-## Presentation Flow
+## Demain
 
-```
-[0:00-0:30]  Slide 1-2: Title + Agenda (Achraf)
-[0:30-2:30]  Slide 3-4: What is HPL (Achraf)
-[2:30-5:30]  Slide 5-6: Algorithm - LU decomposition (Achraf)
-[5:30-8:00]  Slide 7-8: Parallelization (Achraf)
-[8:00-9:00]  Slide 9: Experimental setup (You)
-[9:00-12:00] Slide 10-12: Results + graphs (You)
-[12:00-14:00] Slide 13: Analysis (You)
-[14:00-15:00] Slide 14: Conclusions (You)
-[15:00+]     Q&A (Both)
-```
+Faut qu'on se sync pour :
+1. Décider qui fait quoi (Option A, B ou C ?)
+2. Finir les slides
+3. Répéter au moins 2 fois (timing !)
+
+La soutenance c'est le 28, donc on a la journée de demain pour tout boucler.
 
 ---
 
-## Files in the Repo
-
-- `project/HPL_PRESENTATION_GUIDE.md` - Full detailed guide
-- `project/COLLEAGUE_HANDOFF.md` - This document
-- `project/projet.md` - Original project requirements
-
----
-
-## Questions?
-
-Let me know:
-1. Do you want to run experiments or should I finish them?
-2. What tool for slides? (PowerPoint, Google Slides, Beamer?)
-3. When can we sync tomorrow to rehearse?
-
----
-
-*Generated: January 26, 2026*
+Dis-moi ce que tu préfères et si t'as des questions !
