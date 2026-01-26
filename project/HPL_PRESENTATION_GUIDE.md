@@ -12,6 +12,84 @@ Prepare and deliver a 15-minute presentation covering:
 
 ---
 
+# ⚡ 2-DAY INTENSIVE PLAN WITH WORK SPLIT
+
+## Team Split Overview
+
+| Task Area | YOU (with Claude) | COLLEAGUE |
+|-----------|-------------------|-----------|
+| **Algorithm & Theory** | ✅ Main owner | Support |
+| **Slides: Intro + Algorithm** | ✅ Create | Review |
+| **HPC Experiments** | Support | ✅ Main owner |
+| **Slides: Setup + Results** | Review | ✅ Create |
+| **Q&A Preparation** | ✅ Main owner | Support |
+| **Presentation Speaking** | ~8 min (theory) | ~7 min (results) |
+
+### Why This Split Works For You:
+- **Algorithm part**: Claude can explain every detail, quiz you, help you understand
+- **Q&A prep**: Claude can simulate questions and refine your answers
+- **Your colleague**: Handles the hands-on HPC work (needs platform access, running jobs)
+
+---
+
+## DAY 1 SCHEDULE
+
+### YOU - Morning (3-4h): Algorithm Mastery
+| Time | Task |
+|------|------|
+| 0:00-0:30 | Read Section 1.1 below (prerequisites) |
+| 0:30-1:30 | Read Section 2 (HPL algorithm) - ask Claude questions |
+| 1:30-2:30 | Create slides 1-8 (intro + algorithm) |
+| 2:30-3:30 | Practice explaining algorithm out loud to Claude |
+
+### COLLEAGUE - Morning (3-4h): HPC Setup
+| Time | Task |
+|------|------|
+| 0:00-1:00 | Access HPC platform, locate/install HPL |
+| 1:00-2:00 | Run first test with small N (~10000) |
+| 2:00-3:30 | Run scaling experiments (see Section 4) |
+
+### SYNC MEETING - End of Day 1 (30 min)
+- Share results (colleague → you)
+- Review slides together
+- Identify gaps
+
+### YOU - Evening (2h): Slides + Understanding
+- Integrate colleague's preliminary results
+- Refine algorithm explanations
+- Start Q&A preparation with Claude
+
+### COLLEAGUE - Evening (2h): More Experiments
+- Run remaining experiments
+- Export data, create graphs
+- Document platform specs
+
+---
+
+## DAY 2 SCHEDULE
+
+### Morning (3h): Finalize Content
+| YOU | COLLEAGUE |
+|-----|-----------|
+| Finalize algorithm slides | Create results slides (10-12) |
+| Q&A deep preparation | Create setup slide (9) |
+| Review colleague's slides | Review your slides |
+
+### Afternoon (2-3h): Rehearsal
+| Time | Activity |
+|------|----------|
+| 0:00-0:30 | Full run-through #1 (time it!) |
+| 0:30-1:00 | Fix timing issues, adjust content |
+| 1:00-1:30 | Full run-through #2 |
+| 1:30-2:00 | Q&A practice (quiz each other) |
+| 2:00-2:30 | Final polish |
+
+### Presentation (15 min)
+- **YOU**: Slides 1-8 (~8 min) - Intro, What is HPL, Algorithm, Parallelization
+- **COLLEAGUE**: Slides 9-14 (~7 min) - Setup, Results, Analysis, Conclusion
+
+---
+
 # PHASE 1: Essential Background Knowledge (Day 1)
 *Minimal prerequisites - only what's necessary*
 
@@ -201,20 +279,68 @@ mpirun -np 64 --hostfile hosts.txt ./xhpl
 # - Residual check (PASSED/FAILED)
 ```
 
+## 3.4 QUICK START FOR COLLEAGUE (Copy-Paste Commands)
+
+```bash
+# 1. Check if HPL is available (common HPC systems)
+module avail hpl
+module load hpl  # or similar
+
+# 2. If not available, use pre-built container or compile
+# Option A: Spack
+spack install hpl
+spack load hpl
+
+# Option B: Manual (needs BLAS library)
+wget https://www.netlib.org/benchmark/hpl/hpl-2.3.tar.gz
+tar xzf hpl-2.3.tar.gz
+cd hpl-2.3
+# Follow INSTALL instructions
+
+# 3. Create working directory
+mkdir ~/hpl_experiments && cd ~/hpl_experiments
+cp /path/to/xhpl .
+cp /path/to/HPL.dat .  # or create from template above
+
+# 4. Edit HPL.dat for your test
+# Change N, NB, P, Q values
+
+# 5. Run (example with SLURM)
+srun -N 2 -n 16 ./xhpl > results_N50000_NB192.txt
+
+# 6. Extract key result
+grep -E "WR|PASSED|FAILED" results_N50000_NB192.txt
+```
+
+### What Colleague Needs to Document
+```
+Platform: [cluster name]
+Nodes used: [X]
+Cores per node: [Y]
+Memory per node: [Z GB]
+MPI: [OpenMPI/MPICH/Intel MPI version]
+BLAS: [MKL/OpenBLAS/BLIS version]
+```
+
 ---
 
 # PHASE 4: Experimentation on HPC Platform (Day 3-4)
 
-## 4.1 Experimental Plan
+## 4.1 Experimental Plan (MINIMAL - 2 days)
 
-### Experiments to Run
+### MUST-DO Experiments (for colleague)
+
+| Priority | Experiment | What to vary | Runs needed |
+|----------|------------|--------------|-------------|
+| **1** | Baseline | N = 10000 | 1 run (verify setup) |
+| **2** | Scale N | N = 20K, 50K, 80K | 3 runs |
+| **3** | Block size | NB = 128, 192, 256 | 3 runs (pick best N) |
+
+### NICE-TO-HAVE (if time permits)
 
 | Experiment | Variable | Fixed Parameters | Goal |
 |------------|----------|------------------|------|
-| 1. Scaling N | N = 10K, 20K, 50K, 100K | NB=192, P×Q optimal | Performance vs problem size |
-| 2. Block size | NB = 64, 128, 192, 256 | N fixed (large) | Find optimal NB |
-| 3. Process grid | Various P×Q for same total | N, NB fixed | Communication impact |
-| 4. Weak scaling | N scales with P×Q | NB fixed | Efficiency at scale |
+| 4. Process grid | Various P×Q for same total | N, NB fixed | Communication impact |
 | 5. Strong scaling | Fixed N, increase P×Q | NB fixed | Speedup limits |
 
 ### Metrics to Collect
@@ -342,43 +468,51 @@ mpirun -np 64 --hostfile hosts.txt ./xhpl
 
 ---
 
-# PHASE 7: Action Checklist
+# PHASE 7: 2-DAY Action Checklist
 
-## Week 1 (Before Jan 28)
+## DAY 1 Checklist
 
-### Day 1: Theory
-- [ ] Read this guide completely
-- [ ] Understand LU decomposition (watch a video if needed)
-- [ ] Understand 2D block-cyclic distribution
+### YOU (Algorithm + Theory)
+- [ ] Read Phase 1 (30 min) - Essential background
+- [ ] Read Phase 2 (1h) - HPL algorithm deep dive
+- [ ] Ask Claude to explain anything unclear
+- [ ] Create slides 1-4: Title, Agenda, What is HPL
+- [ ] Create slides 5-8: Algorithm, Parallelization
+- [ ] Practice explaining LU decomposition out loud
+- [ ] Practice explaining 2D block-cyclic distribution
+- [ ] Evening: Start Q&A prep (Phase 6)
 
-### Day 2: HPL Deep Dive
-- [ ] Read HPL documentation: https://www.netlib.org/benchmark/hpl/
-- [ ] Understand HPL.dat parameters
-- [ ] Download and compile HPL (or use pre-installed version)
-
-### Day 3: Experimentation
+### COLLEAGUE (HPC + Experiments)
 - [ ] Access HPC platform
-- [ ] Run initial tests with small N
-- [ ] Collect baseline results
+- [ ] Locate or install HPL
+- [ ] Run test with N=10000 (verify it works)
+- [ ] Run 3-5 scaling experiments (vary N)
+- [ ] Run 2-3 block size experiments (vary NB)
+- [ ] Document: platform name, nodes, cores, memory
+- [ ] Export results to table format
+- [ ] Share results with you by end of day
 
-### Day 4: Full Experiments
-- [ ] Run all planned experiments
-- [ ] Create data tables
-- [ ] Generate graphs
+## DAY 2 Checklist
 
-### Day 5: Presentation
-- [ ] Create slides following outline
-- [ ] Practice timing (15 min)
-- [ ] Prepare Q&A responses
+### YOU
+- [ ] Integrate colleague's results into understanding
+- [ ] Finalize your slides (1-8)
+- [ ] Deep Q&A preparation with Claude
+- [ ] Review colleague's slides (9-14)
 
-### Day 6: Rehearsal
-- [ ] Full run-through with partner
-- [ ] Refine explanations
-- [ ] Time management check
+### COLLEAGUE
+- [ ] Create slide 9: Experimental setup
+- [ ] Create slides 10-12: Results with graphs
+- [ ] Create slide 13: Analysis
+- [ ] Create slide 14: Conclusions
+- [ ] Review your slides (1-8)
 
-### Day 7 (Jan 28): Presentation Day
-- [ ] Final review
-- [ ] Present!
+### TOGETHER
+- [ ] Full rehearsal #1 (time it - must be ≤15 min)
+- [ ] Adjust content if over time
+- [ ] Full rehearsal #2
+- [ ] Q&A practice (quiz each other)
+- [ ] PRESENT!
 
 ---
 
