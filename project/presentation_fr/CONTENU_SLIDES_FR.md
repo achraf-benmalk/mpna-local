@@ -39,11 +39,14 @@
 | N | NB | P×Q | Temps | GFLOPS | Statut |
 |---|---|---|---|---|---|
 | 10 000 | 192 | 2×4 | 42 s | 15.7 | ✓ VALIDÉ |
-| 20 000 | 192 | 2×4 | 2 min 10 s | **41.0** | ✓ VALIDÉ |
+| 20 000 | 192 | 2×4 | 2 min 10 s | 41.0 | ✓ VALIDÉ |
 | 30 000 | 192 | 2×4 | 7 min 51 s | 38.2 | ✓ VALIDÉ |
+| 30 000 | **128** | 2×4 | 6 min 48 s | **44.2** ⭐ | ✓ VALIDÉ |
 
-### Observation Clé (texte en dessous du tableau)
-📈 **Tendance** : GFLOPS augmente avec N, puis diminue à N=30K (thermal throttling)
+### Observations Clés
+📈 **Scaling** : GFLOPS augmente avec N (meilleur ratio calcul/communication)
+🌡️ **Throttling** : Baisse à N=30K avec NB=192 (surchauffe CPU)
+⚡ **Tuning NB** : NB=128 donne **+15.6%** de performance vs NB=192
 
 ---
 
@@ -58,12 +61,13 @@
 ### Points Clés (à côté du graphique)
 - **N=10K** → 15.7 GFLOPS (référence)
 - **N=20K** → 41.0 GFLOPS (**+161%** 📈)
-- **N=30K** → 38.2 GFLOPS (-7%, throttling 🌡️)
+- **N=30K, NB=192** → 38.2 GFLOPS (throttling 🌡️)
+- **N=30K, NB=128** → **44.2 GFLOPS** ⭐ (meilleur résultat!)
 
 ### Explication
 > "Plus N est grand, meilleur est le ratio calcul/communication"
 >
-> "La baisse à N=30K est due au thermal throttling du CPU"
+> "Le tuning de NB permet de récupérer +15.6% de performance"
 
 ---
 
@@ -79,9 +83,9 @@
 Efficacité = GFLOPS obtenus / GFLOPS théoriques × 100%
 
 Pic théorique (Ryzen 9) : ~400 GFLOPS
-Meilleur résultat : 41.0 GFLOPS
+Meilleur résultat : 44.2 GFLOPS (NB=128)
 
-→ Efficacité : ~10%
+→ Efficacité : ~11%
 ```
 
 ### ❓ Pourquoi Seulement 10% ?
@@ -177,12 +181,14 @@ Meilleur résultat : 41.0 GFLOPS
 Les graphiques sont dans le dossier `presentation_fr/` :
 
 1. **graphique1_gflops.png** - Barres GFLOPS vs N
-2. **graphique2_temps.png** - Barres Temps vs N
-3. **graphique3_evolution.png** - Courbe avec annotation throttling
-4. **graphique4_tableau.png** - Tableau formaté (alternative)
+2. **graphique2_tuning_nb.png** - Comparaison NB=128 vs NB=192 ⭐ NOUVEAU
+3. **graphique3_evolution.png** - Courbe avec point optimisé NB=128
+4. **graphique4_tableau.png** - Tableau complet (4 résultats)
 5. **graphique5_efficacite.png** - Comparaison efficacité
+6. **graphique6_temps.png** - Temps d'exécution
 
-**Recommandé pour Slide 11** : graphique3_evolution.png (le plus parlant)
+**Recommandé pour Slide 11** : graphique3_evolution.png (montre le tuning)
+**Recommandé pour ajout** : graphique2_tuning_nb.png (impact de NB)
 
 ---
 
