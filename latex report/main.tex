@@ -206,23 +206,25 @@ N & Temps (s) & Gflops \\
 \caption{Résultats sur 1 GPU A100}
 \end{table}
 
-Pic théorique A100 :
+Le pic théorique FP64 de l'A100 est calculé à partir du nombre de cœurs CUDA FP64, du facteur FMA (\textit{Fused Multiply-Add}, chaque opération FMA compte pour 2 opérations flottantes) et de la fréquence boost :
 
 \[
-6912 \times 2 \times 1.41 \approx 19{,}5 \text{ TFLOPS}
+\text{Peak}_{A100} = \underbrace{6912}_{\text{cœurs FP64}} \times \underbrace{2}_{\text{FMA}} \times \underbrace{1{,}41 \text{ GHz}}_{\text{freq. boost}} \approx 19{,}5 \text{ TFLOPS}
 \]
 
-Efficacité maximale :
+Efficacité maximale atteinte (à $N = 100\,000$) :
 
 \[
-\frac{17860}{19487} \times 100 \approx 91{,}7\%
+\eta_{A100} = \frac{17\,860}{19\,487} \times 100 \approx 91{,}7\%
 \]
+
+Cette efficacité élevée confirme que HPL est un benchmark \textit{compute-bound} : la majorité du temps est consacrée aux opérations DGEMM (produits de matrices denses), qui exploitent pleinement les unités de calcul du GPU.
 
 % ==========================================================
 \subsection{2 GPU, 2 Processus MPI, 1 Processus MPI/GPU}
 
 \begin{verbatim}
-salloc -t 4:00:00 -n 1 --gres=gpu:2
+salloc -t 4:00:00 --ntasks=2 -p gpu --gres=gpu:2
 \end{verbatim}
 
 \begin{table}[H]
@@ -241,13 +243,19 @@ N & Temps (s) & Gflops \\
 \caption{Résultats sur 2 GPUs A100}
 \end{table}
 
-Speedup :
+Speedup à $N = 100\,000$ :
 
 \[
-\frac{34720}{17860} \approx 1{,}95
+S_{A100} = \frac{34\,720}{17\,860} \approx 1{,}94
 \]
 
-Efficacité parallèle ≈ 97\%.
+Efficacité parallèle :
+
+\[
+E_{A100} = \frac{S_{A100}}{2} \times 100 = \frac{1{,}94}{2} \times 100 \approx 97\%
+\]
+
+\textbf{Remarque :} À $N = 20\,000$, les 2 GPUs (9\,106 GFLOPS) sont \textit{plus lents} que le GPU unique (9\,731 GFLOPS). Ce phénomène est analysé en section~\ref{sec:analyse}.
 
 % ==========================================================
 \section{Partition H100}
@@ -274,17 +282,25 @@ N & Temps (s) & Gflops \\
 \caption{Résultats sur 1 GPU H100}
 \end{table}
 
-Pic théorique H100 :
+Le pic théorique FP64 du H100 (variante SXM) est calculé de manière analogue :
 
 \[
-16896 \times 2 \times 1.6 \approx 54 \text{ TFLOPS}
+\text{Peak}_{H100} = \underbrace{16\,896}_{\text{cœurs FP64}} \times \underbrace{2}_{\text{FMA}} \times \underbrace{1{,}6 \text{ GHz}}_{\text{freq. boost}} \approx 54{,}1 \text{ TFLOPS}
 \]
+
+Efficacité maximale atteinte (à $N = 100\,000$) :
+
+\[
+\eta_{H100} = \frac{45\,110}{54\,067} \times 100 \approx 83{,}4\%
+\]
+
+L'efficacité du H100 est inférieure à celle de l'A100 (83{,}4\% vs 91{,}7\%). Le H100 possède 2{,}4$\times$ plus de cœurs CUDA que l'A100, ce qui rend plus difficile la saturation complète de toutes les unités de calcul pour une même taille de problème.
 
 % ==========================================================
 \subsection{2 GPU, 2 Processus MPI, 1 Processus MPI/GPU}
 
 \begin{verbatim}
-salloc -t 4:00:00 -n 1 --ntasks=2 -p gpu_h100 --gres=gpu:2
+salloc -t 4:00:00 --ntasks=2 -p gpu_h100 --gres=gpu:2
 \end{verbatim}
 
 \begin{table}[H]
@@ -303,27 +319,180 @@ N & Temps (s) & Gflops \\
 \caption{Résultats sur 2 GPUs H100}
 \end{table}
 
+Speedup à $N = 100\,000$ :
+
+\[
+S_{H100} = \frac{81\,970}{45\,110} \approx 1{,}82
+\]
+
+Efficacité parallèle :
+
+\[
+E_{H100} = \frac{S_{H100}}{2} \times 100 = \frac{1{,}82}{2} \times 100 \approx 91\%
+\]
+
+\textbf{Remarque :} Le passage multi-GPU est moins efficace sur H100 (91\%) que sur A100 (97\%). À $N = 20\,000$, les 2 GPUs H100 (11\,510 GFLOPS) sont même 28{,}6\% \textit{plus lents} que le GPU unique (16\,130 GFLOPS). Cette dégradation est analysée en section~\ref{sec:analyse}.
+
 % ==========================================================
-\section{Analyse comparative A100 vs H100}
+\section{Analyse des résultats}
+\label{sec:analyse}
 
-Le GPU H100 surpasse clairement le A100 pour toutes les tailles de matrices testées.
+\subsection{Évolution des performances avec la taille du problème}
 
-On observe :
+Sur les deux architectures, les performances (GFLOPS) augmentent avec $N$ avant de converger vers un plateau. Ce comportement s'explique par le rapport entre calcul et communication :
 
 \begin{itemize}
-    \item Un débit Gflops plus élevé
-    \item Une meilleure scalabilité
-    \item Des temps d’exécution plus courts
-    \item Une architecture plus avancée (Hopper vs Ampere)
+    \item Le volume de calcul de la factorisation LU croît en $\mathcal{O}(N^3)$.
+    \item Le volume de communication croît en $\mathcal{O}(N^2)$.
 \end{itemize}
+
+Ainsi, pour des grandes valeurs de $N$, le calcul domine largement et le GPU peut maintenir un taux d'utilisation élevé de ses unités de calcul (principalement via les opérations DGEMM). Pour les petites valeurs de $N$, le \textit{overhead} de communication et de synchronisation représente une fraction significative du temps total, ce qui réduit les GFLOPS mesurés.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=1]{images/a100-h100-hpl.png}
-    \caption{Comparaison A100 vs H100}
+    \includegraphics[width=0.8\textwidth]{images/hpl-a100.png}
+    \caption{Performances A100 : 1 GPU vs 2 GPUs}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/hpl-h100.png}
+    \caption{Performances H100 : 1 GPU vs 2 GPUs}
+\end{figure}
 
+\subsection{Passage à l'échelle multi-GPU}
 
+Le tableau~\ref{tab:scaling} résume le passage à l'échelle pour $N = 100\,000$ :
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+GPU & 1 GPU (GFLOPS) & 2 GPUs (GFLOPS) & Speedup & Efficacité parallèle \\
+\hline
+A100 & 17\,860 & 34\,720 & 1{,}94$\times$ & 97\% \\
+H100 & 45\,110 & 81\,970 & 1{,}82$\times$ & 91\% \\
+\hline
+\end{tabular}
+\caption{Passage à l'échelle multi-GPU à $N = 100\,000$}
+\label{tab:scaling}
+\end{table}
+
+L'A100 affiche une meilleure efficacité parallèle (97\%) que le H100 (91\%). Cette différence s'explique par le fait que le H100, étant plus rapide en calcul pur, termine la phase de calcul plus rapidement, ce qui rend la latence de communication inter-GPU (via NVLink) proportionnellement plus coûteuse. Le rapport calcul/communication est donc moins favorable sur H100 pour une même taille de problème.
+
+\subsection{Anomalie à $N = 20\,000$ : 2 GPUs plus lents qu'un seul}
+
+Un résultat remarquable concerne la dégradation de performance à $N = 20\,000$ en configuration multi-GPU :
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+GPU & 1 GPU (GFLOPS) & 2 GPUs (GFLOPS) & Dégradation \\
+\hline
+A100 & 9\,731 & 9\,106 & $-6{,}4\%$ \\
+H100 & 16\,130 & 11\,510 & $-28{,}6\%$ \\
+\hline
+\end{tabular}
+\caption{Dégradation de performance à $N = 20\,000$ en multi-GPU}
+\end{table}
+
+Avec un problème de petite taille ($N = 20\,000$), chaque GPU reçoit une portion de matrice trop réduite pour saturer ses milliers de cœurs CUDA. Le coût de synchronisation et d'échange de données entre les deux GPUs dépasse alors le bénéfice du parallélisme supplémentaire. Ce phénomène est plus prononcé sur H100 ($-28{,}6\%$) car ce GPU possède davantage de cœurs à alimenter en données (16\,896 vs 6\,912).
+
+Il existe donc un seuil de taille de problème en dessous duquel l'ajout de GPUs est contre-productif. Pour nos configurations, ce seuil se situe autour de $N = 30\,000$.
+
+\subsection{Comparaison architecturale A100 vs H100}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/a100-h100-hpl.png}
+    \caption{Comparaison des performances A100 vs H100 (1 GPU)}
+\end{figure}
+
+Le tableau~\ref{tab:speedup_arch} présente le facteur d'accélération du H100 par rapport à l'A100 pour chaque taille de problème :
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+N & A100 (GFLOPS) & H100 (GFLOPS) & Ratio H100/A100 \\
+\hline
+20\,000  & 9\,731  & 16\,130 & 1{,}66$\times$ \\
+40\,000  & 15\,890 & 35\,760 & 2{,}25$\times$ \\
+60\,000  & 17\,150 & 41\,760 & 2{,}43$\times$ \\
+80\,000  & 17\,600 & 44\,130 & 2{,}51$\times$ \\
+100\,000 & 17\,860 & 45\,110 & 2{,}53$\times$ \\
+\hline
+\end{tabular}
+\caption{Facteur d'accélération H100 par rapport à A100}
+\label{tab:speedup_arch}
+\end{table}
+
+Le ratio converge vers $\approx 2{,}5\times$ pour les grandes tailles de problème. Cela est cohérent avec le rapport des pics théoriques FP64 :
+
+\[
+\frac{\text{Peak}_{H100}}{\text{Peak}_{A100}} = \frac{54\,067}{19\,487} \approx 2{,}77
+\]
+
+Le facteur mesuré (2{,}53$\times$) est légèrement inférieur au facteur théorique (2{,}77$\times$). Cet écart de $\approx 9\%$ peut s'expliquer par des différences de bande passante mémoire, d'efficacité du \textit{scheduler} GPU, et du fait que le H100 est plus difficile à saturer (efficacité de 83{,}4\% vs 91{,}7\% pour l'A100).
+
+À $N = 20\,000$, le ratio n'est que de 1{,}66$\times$ car les deux GPUs sont sous-utilisés : ni l'un ni l'autre ne peut exploiter pleinement ses unités de calcul avec un problème aussi petit.
+
+\subsection{Synthèse de l'efficacité}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+Configuration & Pic théorique (TFLOPS) & Meilleur résultat (GFLOPS) & Efficacité \\
+\hline
+A100 (1 GPU) & 19{,}5 & 17\,860 & 91{,}7\% \\
+H100 (1 GPU) & 54{,}1 & 45\,110 & 83{,}4\% \\
+A100 (2 GPUs) & 39{,}0 & 34\,720 & 89{,}0\% \\
+H100 (2 GPUs) & 108{,}1 & 81\,970 & 75{,}8\% \\
+\hline
+\end{tabular}
+\caption{Synthèse de l'efficacité HPL sur les différentes configurations}
+\label{tab:efficacite}
+\end{table}
+
+On observe que l'efficacité décroît lorsqu'on passe à des configurations plus puissantes. Plus le pic théorique est élevé, plus il est difficile de l'exploiter pleinement. Néanmoins, toutes les configurations atteignent des efficacités supérieures à 75\%, ce qui témoigne de la nature \textit{compute-bound} du benchmark HPL et de la qualité de l'implémentation GPU fournie par NVIDIA dans le conteneur HPC-Benchmarks.
+
+% ==========================================================
+\section{Conclusion}
+
+Ce travail a permis d'évaluer les performances du benchmark HPL sur deux architectures GPU NVIDIA --- l'A100 (Ampere) et le H100 (Hopper) --- au sein du supercalculateur Toubkal.
+
+Les principaux enseignements sont :
+
+\begin{enumerate}
+    \item \textbf{HPL est un benchmark compute-bound :} Les efficacités mesurées (83--92\%) confirment que la performance est principalement limitée par la puissance de calcul et non par la bande passante mémoire ou les communications.
+
+    \item \textbf{La taille du problème est déterminante :} Les performances augmentent significativement avec $N$ en raison du rapport $\mathcal{O}(N^3)/\mathcal{O}(N^2)$ entre calcul et communication. Un $N$ trop petit conduit à une sous-utilisation des ressources.
+
+    \item \textbf{Le multi-GPU a un seuil de rentabilité :} En dessous d'un certain $N$ ($\approx 30\,000$ dans nos tests), l'ajout d'un second GPU dégrade les performances au lieu de les améliorer.
+
+    \item \textbf{Le H100 offre un gain de $\approx 2{,}5\times$ sur l'A100 :} Ce ratio est cohérent avec le rapport des pics théoriques FP64 ($2{,}77\times$), avec un écart dû à la difficulté accrue de saturer les unités de calcul du H100.
+
+    \item \textbf{L'efficacité parallèle diminue avec la puissance :} L'A100 affiche une meilleure efficacité parallèle multi-GPU (97\%) que le H100 (91\%), car la latence de communication devient proportionnellement plus coûteuse sur un GPU plus rapide.
+\end{enumerate}
+
+Ces résultats illustrent les compromis fondamentaux du calcul haute performance : puissance brute, passage à l'échelle, et dimensionnement du problème sont étroitement liés. L'optimisation des paramètres HPL (taille de matrice, taille de bloc, grille de processus) reste essentielle pour exploiter au mieux les architectures modernes.
+
+% ==========================================================
+\section*{Références}
+\addcontentsline{toc}{section}{Références}
+
+\begin{enumerate}[label={[\arabic*]}]
+    \item A. Petitet, R. C. Whaley, J. Dongarra, A. Cleary, \textit{HPL --- A Portable Implementation of the High-Performance Linpack Benchmark for Distributed-Memory Computers}, version 2.3, 2018. \url{https://www.netlib.org/benchmark/hpl/}
+
+    \item TOP500 Project, \textit{TOP500 Supercomputer Sites}. \url{https://www.top500.org/}
+
+    \item NVIDIA Corporation, \textit{NVIDIA A100 Tensor Core GPU --- Architecture Whitepaper}, 2020.
+
+    \item NVIDIA Corporation, \textit{NVIDIA H100 Tensor Core GPU --- Architecture Whitepaper}, 2022.
+
+    \item NVIDIA Corporation, \textit{NVIDIA HPC-Benchmarks Container}, NGC Catalog. \url{https://catalog.ngc.nvidia.com/orgs/nvidia/containers/hpc-benchmarks}
+\end{enumerate}
 
 \end{document}
