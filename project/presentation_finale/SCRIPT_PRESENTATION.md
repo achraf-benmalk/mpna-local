@@ -29,25 +29,25 @@ GFLOPS = milliards d'opérations mathématiques par seconde. C'est la vitesse du
 
 C'est la vitesse maximale que le GPU POURRAIT atteindre si tout est parfait. En pratique, on n'atteint jamais 100%.
 
-- **A100** : pic = **19,5 TFLOPS** (19 500 GFLOPS)
-- **H100 PCIe** : pic = **51 TFLOPS** (51 000 GFLOPS)
+- **A100** : pic = **19,5 TFLOPS** (19 487 GFLOPS)
+- **H100** : pic = **54 TFLOPS** (54 067 GFLOPS)
 
 ### A3. Comment on calcule le pic ? (Question fréquente !)
 
 **Pour l'A100 :**
 ```
-3 456 cœurs FP64 × 2 (opération FMA) × 1,41 GHz = 9,7 TFLOPS (cœurs CUDA seuls)
-Avec Tensor Cores (×2) : 9,7 × 2 = 19,5 TFLOPS
+6 912 cœurs CUDA × 2 (opération FMA) × 1,41 GHz ≈ 19,5 TFLOPS
 ```
-- 3 456 = nombre de cœurs capables de faire du calcul en double précision (FP64)
+- 6 912 = nombre de cœurs CUDA
 - FMA = Fused Multiply-Add → chaque opération compte pour 2 (une multiplication + une addition)
 - 1,41 GHz = vitesse d'horloge du GPU
-- Tensor Cores = unités spéciales qui doublent le débit FP64 pour les opérations DGEMM (produits de matrices)
 
-**Pour le H100 PCIe :**
-- 7 296 cœurs FP64, Tensor Cores 4e génération
-- Pic officiel NVIDIA : **51 TFLOPS**
-- La variante SXM (plus puissante) atteint 67 TFLOPS
+**Pour le H100 :**
+```
+16 896 cœurs CUDA × 2 (opération FMA) × 1,6 GHz ≈ 54 TFLOPS
+```
+- 16 896 = nombre de cœurs CUDA
+- 1,6 GHz = vitesse d'horloge du GPU
 
 ### A4. C'est quoi l'efficacité ?
 
@@ -56,8 +56,8 @@ Efficacité = (GFLOPS mesurés / Pic théorique) × 100%
 ```
 
 Exemples :
-- A100 : 17 860 / 19 500 = **91,6%** → excellent
-- H100 : 45 110 / 51 000 = **88,5%** → très bon
+- A100 : 17 860 / 19 487 = **91,7%** → excellent
+- H100 : 45 110 / 54 067 = **83,4%** → bon
 - A100 a meilleure efficacité car plus facile à saturer (moins de cœurs)
 
 ### A5. C'est quoi le speedup multi-GPU ?
@@ -66,7 +66,7 @@ Exemples :
 Speedup = GFLOPS avec 2 GPUs / GFLOPS avec 1 GPU
 ```
 
-- A100 : 34 720 / 17 860 = **1,94x** → efficacité parallèle 97% (quasi parfait)
+- A100 : 34 720 / 17 860 = **1,95x** → efficacité parallèle 97% (quasi parfait)
 - H100 : 81 970 / 45 110 = **1,82x** → efficacité parallèle 91% (bon mais pas parfait)
 - Idéal = 2,0x (doublement parfait), jamais atteint en pratique à cause de la communication
 
@@ -82,7 +82,7 @@ Quand N est grand, le calcul domine. Quand N est petit, le GPU passe trop de tem
 
 Avec un petit problème, chaque GPU reçoit la moitié de la matrice. Cette moitié est trop petite pour occuper tous les cœurs. En plus, les 2 GPUs doivent communiquer entre eux (via NVLink/PCIe). Le coût de cette communication est plus élevé que le gain de calcul.
 
-Sur H100 c'est pire (-28,6% vs -6,4% sur A100) car le H100 a plus de cœurs à occuper (7 296 vs 3 456).
+Sur H100 c'est pire (-28,6% vs -6,4% sur A100) car le H100 a plus de cœurs à occuper (16 896 vs 6 912).
 
 ### A8. Pourquoi H100 a moins bonne efficacité parallèle ?
 
@@ -98,11 +98,9 @@ Pourquoi plus grand sur GPU ? Les GPUs ont des milliers de cœurs. Il faut de gr
 
 ### A10. Tensor Cores, c'est quoi ?
 
-Des unités de calcul spéciales dans les GPUs NVIDIA, conçues pour accélérer les multiplications de matrices. Sur HPL, elles doublent la performance FP64 par rapport aux cœurs CUDA classiques.
-- A100 : 3e génération → ×2 en FP64
-- H100 : 4e génération → ×2 en FP64
-
-Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
+Des unités de calcul spéciales dans les GPUs NVIDIA, conçues pour accélérer les multiplications de matrices. HPL les utilise pour les opérations DGEMM (produits de matrices denses), ce qui permet d'atteindre le pic théorique FP64.
+- A100 : 3e génération de Tensor Cores
+- H100 : 4e génération de Tensor Cores
 
 ---
 
@@ -116,11 +114,11 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 
 > "Nous avons exécuté HPL sur un cluster HPC équipé de deux types de GPUs NVIDIA."
 >
-> "Le premier est l'A100, architecture Ampere, avec 3 456 cœurs FP64 et un pic théorique de 19,5 TFLOPS en FP64 avec Tensor Cores."
+> "Le premier est l'A100, architecture Ampere, avec 6 912 cœurs CUDA et un pic théorique de 19,5 TFLOPS en FP64."
 >
-> "Le second est le H100 en variante PCIe, architecture Hopper, avec 7 296 cœurs FP64 et un pic de 51 TFLOPS — soit 2,6 fois plus puissant."
+> "Le second est le H100, architecture Hopper, avec 16 896 cœurs CUDA et un pic de 54 TFLOPS — soit environ 2,8 fois plus puissant."
 >
-> "HPL a été déployé via le conteneur NVIDIA HPC-Benchmarks 23.10, avec Singularity. Ce conteneur utilise les Tensor Cores pour les opérations DGEMM, ce qui double le débit FP64."
+> "HPL a été déployé via le conteneur NVIDIA HPC-Benchmarks 23.10, avec Singularity. Ce conteneur fournit une version optimisée de HPL pour GPU."
 >
 > "Pour la configuration HPL, nous avons utilisé NB = 576. C'est nettement plus grand que les valeurs CPU typiques de 128 à 256, car les GPUs ont besoin de grands blocs pour alimenter leurs milliers de cœurs."
 
@@ -140,15 +138,15 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 
 > "Voici les résultats sur A100. On voit que les GFLOPS augmentent avec N, passant de 9 700 à 17 860 GFLOPS pour 1 GPU."
 >
-> "Le pic théorique est de 19 500 GFLOPS. À N = 100 000, on atteint 17 860, soit une efficacité de 91,6%. C'est excellent."
+> "Le pic théorique est de 19 500 GFLOPS. À N = 100 000, on atteint 17 860, soit une efficacité de 91,7%. C'est excellent."
 >
-> "Avec 2 GPUs, on obtient 34 720 GFLOPS, soit un speedup de 1,94x. L'efficacité parallèle est de 97%, ce qui est quasi-linéaire."
+> "Avec 2 GPUs, on obtient 34 720 GFLOPS, soit un speedup de 1,95x. L'efficacité parallèle est de 97%, ce qui est quasi-linéaire."
 >
 > "On remarque toutefois qu'à N = 20 000, les 2 GPUs sont légèrement plus lents que 1 seul. On y reviendra."
 
 ### Slide 5 — Résultats H100 (1m30)
 
-> "Sur H100, les performances sont nettement supérieures. 1 GPU atteint 45 110 GFLOPS à N = 100 000, soit une efficacité de 88,5% par rapport au pic de 51 TFLOPS."
+> "Sur H100, les performances sont nettement supérieures. 1 GPU atteint 45 110 GFLOPS à N = 100 000, soit une efficacité de 83,4% par rapport au pic de 54 TFLOPS."
 >
 > "Avec 2 GPUs, on monte à 81 970 GFLOPS, un speedup de 1,82x — soit 91% d'efficacité parallèle."
 >
@@ -162,7 +160,7 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 >
 > "Le coût de communication entre les 2 GPUs dépasse le gain de calcul supplémentaire."
 >
-> "C'est plus prononcé sur H100 car il a plus de cœurs à alimenter : 7 296 contre 3 456 pour l'A100."
+> "C'est plus prononcé sur H100 car il a plus de cœurs à alimenter : 16 896 contre 6 912 pour l'A100."
 >
 > "Il existe donc un seuil de rentabilité : entre N = 20 000 et 40 000. En dessous, ajouter un GPU est contre-productif."
 >
@@ -174,9 +172,9 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 >
 > "Le ratio d'accélération varie : 1,66x à N = 20 000, et converge vers 2,53x à N = 100 000."
 >
-> "Le ratio théorique entre les pics est 51 divisé par 19,5, soit 2,62x."
+> "Le ratio théorique entre les pics est 54 divisé par 19,5, soit 2,77x."
 >
-> "Le ratio mesuré de 2,53x est très proche, avec un écart de seulement 3%. Cela confirme que HPL exploite efficacement les deux architectures."
+> "Le ratio mesuré de 2,53x est proche, avec un écart d'environ 9%. Cet écart s'explique par la différence d'efficacité : le H100 est plus difficile à saturer que l'A100."
 >
 > "À N = 20 000, le ratio est seulement de 1,66x car les deux GPUs sont sous-utilisés."
 
@@ -184,9 +182,9 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 
 > "Ce tableau résume l'efficacité de chaque configuration."
 >
-> "On observe une tendance claire : plus la configuration est puissante, plus l'efficacité baisse. De 91,6% pour l'A100 1 GPU jusqu'à 80,4% pour le H100 2 GPUs."
+> "On observe une tendance claire : plus la configuration est puissante, plus l'efficacité baisse. De 91,7% pour l'A100 1 GPU jusqu'à 75,8% pour le H100 2 GPUs."
 >
-> "Mais toutes les configurations dépassent 80%, ce qui confirme la nature compute-bound de HPL."
+> "Toutes les configurations atteignent des efficacités élevées, ce qui confirme la nature compute-bound de HPL."
 >
 > "La conclusion : plus un GPU est puissant, plus il est difficile d'exploiter 100% de sa capacité. Le dimensionnement du problème et le tuning des paramètres restent essentiels."
 
@@ -194,7 +192,7 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 
 > "Pour résumer nos 5 enseignements principaux :"
 >
-> "Un : HPL est compute-bound — les efficacités de 88 à 92% le confirment."
+> "Un : HPL est compute-bound — les efficacités de 83 à 92% le confirment."
 >
 > "Deux : la taille du problème est déterminante — N cube versus N carré."
 >
@@ -214,10 +212,10 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 > "NB = 576 est la valeur recommandée par NVIDIA pour les GPUs dans le conteneur HPC-Benchmarks. Les GPUs ont des milliers de cœurs — il leur faut des blocs plus grands que les CPUs pour maintenir un taux d'occupation élevé. Sur CPU, on utilise 128 à 256 pour tenir dans le cache L2."
 
 ### Q2 : "Pourquoi l'efficacité du H100 est inférieure à celle de l'A100 ?"
-> "Le H100 a 2,1 fois plus de cœurs FP64 que l'A100. Avec le même problème de taille N, il est plus difficile de tous les occuper. Il faudrait un N encore plus grand pour atteindre la même efficacité. C'est un compromis classique en HPC entre puissance brute et utilisation."
+> "Le H100 a environ 2,4 fois plus de cœurs CUDA que l'A100 — 16 896 contre 6 912. Avec le même problème de taille N, il est plus difficile de tous les occuper. Il faudrait un N encore plus grand pour atteindre la même efficacité. C'est un compromis classique en HPC entre puissance brute et utilisation."
 
 ### Q3 : "Comment calculez-vous le pic théorique ?"
-> "Pour l'A100 : 3 456 cœurs FP64, multipliés par 2 pour le FMA, multipliés par 1,41 GHz — ce qui donne 9,7 TFLOPS pour les cœurs CUDA. Avec les Tensor Cores qui doublent le débit FP64, on arrive à 19,5 TFLOPS. C'est le chiffre officiel NVIDIA. Pour le H100 PCIe, le pic officiel est 51 TFLOPS."
+> "Pour l'A100 : 6 912 cœurs CUDA, multipliés par 2 pour le FMA, multipliés par 1,41 GHz — ce qui donne environ 19,5 TFLOPS. Pour le H100 : 16 896 cœurs CUDA × 2 × 1,6 GHz = environ 54 TFLOPS."
 
 ### Q4 : "Pourquoi P×Q = 2×1 et pas 1×2 ?"
 > "Sur GPU avec HPL, on utilise 1 processus MPI par GPU. Pour 2 GPUs, P×Q = 2×1 signifie 2 processus en colonne. La distribution des données dans HPL favorise cette configuration pour minimiser la communication pendant la factorisation de panel."
@@ -228,14 +226,14 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 ### Q6 : "Avez-vous vérifié la correction des résultats ?"
 > "Oui, tous les tests ont passé la vérification du résidu. HPL vérifie que la norme ||Ax-b|| est inférieure à un seuil de 16,0 par rapport à la précision machine. Tous nos résultats affichent PASSED."
 
-### Q7 : "Pourquoi le ratio mesuré (2,53x) ne correspond pas exactement au ratio théorique (2,62x) ?"
-> "L'écart est de seulement 3%, ce qui est très faible. La différence vient du fait que le H100 est légèrement plus difficile à saturer — son efficacité est 88,5% vs 91,6% pour l'A100. En pratique, la bande passante mémoire, les latences internes et le scheduler GPU expliquent ce petit écart."
+### Q7 : "Pourquoi le ratio mesuré (2,53x) ne correspond pas exactement au ratio théorique (2,77x) ?"
+> "L'écart est d'environ 9%. La différence vient du fait que le H100 est plus difficile à saturer — son efficacité est 83,4% vs 91,7% pour l'A100. Le H100 a beaucoup plus de cœurs (16 896 vs 6 912), donc pour une même taille de problème, il est plus difficile de les occuper tous."
 
 ### Q8 : "Pourquoi Singularity et pas Docker ?"
 > "Singularity est le standard en HPC car il fonctionne sans privilèges root, contrairement à Docker. Sur un cluster partagé, la sécurité impose Singularity. Le conteneur NVIDIA HPC-Benchmarks est fourni au format Singularity/Docker sur NGC."
 
 ### Q9 : "Quelle est la différence entre H100 SXM et PCIe ?"
-> "Le SXM a plus de SM actifs (132 vs 114), une fréquence boost plus élevée (1 830 vs 1 620 MHz) et utilise NVLink pour la connexion inter-GPU, ce qui est plus rapide que le PCIe. Son pic FP64 Tensor Core est 67 TFLOPS contre 51 pour le PCIe."
+> "Le SXM a davantage de SM actifs et une fréquence boost plus élevée, ce qui lui donne un pic FP64 supérieur à la variante PCIe que nous avons testée. Il utilise aussi NVLink pour la connexion inter-GPU, ce qui est plus rapide que le PCIe."
 
 ### Q10 : "Qu'est-ce qu'on pourrait améliorer ?"
 > "Tester des valeurs de N encore plus grandes pour voir si l'efficacité du H100 converge vers celle de l'A100. Aussi, tester avec plus de GPUs (4, 8) pour étudier le passage à l'échelle. Et comparer NB = 576 avec d'autres valeurs de bloc."
@@ -246,13 +244,13 @@ Sans Tensor Cores, le pic FP64 de l'A100 serait 9,7 TFLOPS au lieu de 19,5.
 
 | Quoi | Valeur |
 |------|--------|
-| A100 pic FP64 TC | 19,5 TFLOPS |
-| H100 PCIe pic FP64 TC | 51 TFLOPS |
-| A100 meilleur résultat | 17 860 GFLOPS (91,6%) |
-| H100 meilleur résultat | 45 110 GFLOPS (88,5%) |
-| A100 2-GPU speedup | 1,94x (97% eff. parallèle) |
+| A100 pic FP64 | 19,5 TFLOPS (6 912 × 2 × 1,41) |
+| H100 pic FP64 | 54 TFLOPS (16 896 × 2 × 1,6) |
+| A100 meilleur résultat | 17 860 GFLOPS (91,7%) |
+| H100 meilleur résultat | 45 110 GFLOPS (83,4%) |
+| A100 2-GPU speedup | 1,95x (97% eff. parallèle) |
 | H100 2-GPU speedup | 1,82x (91% eff. parallèle) |
-| H100/A100 ratio mesuré | 2,53x (théorique : 2,62x) |
+| H100/A100 ratio mesuré | 2,53x (théorique : 2,77x) |
 | Anomalie N=20K H100 | -28,6% (2 GPUs plus lents) |
 | NB GPU | 576 |
 | NB CPU typique | 128-256 |

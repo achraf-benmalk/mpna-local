@@ -146,9 +146,8 @@ data = [
     ["", "A100 (Ampere)", "H100 (Hopper)"],
     ["Partition", "gpu", "gpu_h100"],
     ["Variante", "SXM / 80 Go HBM2e", "PCIe / 80 Go HBM3"],
-    ["Cœurs FP64", "3 456", "7 296"],
-    ["Tensor Cores", "3e gén.", "4e gén."],
-    ["Peak FP64 TC", "19,5 TFLOPS", "51 TFLOPS"],
+    ["Cœurs CUDA", "6 912", "16 896"],
+    ["Peak FP64", "19,5 TFLOPS", "54 TFLOPS"],
 ]
 add_table(slide, Inches(7), Inches(2.2), Inches(5.5), Inches(3), data)
 
@@ -220,12 +219,12 @@ shape.line.color.rgb = ACCENT_BLUE
 tf = add_text_box(slide, Inches(0.8), Inches(5.6), Inches(11.5), Inches(1.3),
     "", 16)
 p = tf.paragraphs[0]
-p.text = "Peak théorique : 19,5 TFLOPS (FP64 Tensor Core)  |  Meilleur résultat : 17 860 GFLOPS  |  Efficacité : 91,6%"
+p.text = "Peak théorique : 19,5 TFLOPS (FP64)  |  Meilleur résultat : 17 860 GFLOPS  |  Efficacité : 91,7%"
 p.font.size = Pt(17)
 p.font.bold = True
 p.font.color.rgb = DARK_BLUE
 p2 = tf.add_paragraph()
-p2.text = "Speedup 2 GPUs : 1,94x (efficacité parallèle 97%)  |  Tous les tests : PASSED"
+p2.text = "Speedup 2 GPUs : 1,95x (efficacité parallèle 97%)  |  Tous les tests : PASSED"
 p2.font.size = Pt(16)
 p2.font.color.rgb = ACCENT_GREEN
 
@@ -257,7 +256,7 @@ shape.line.color.rgb = ACCENT_RED
 tf = add_text_box(slide, Inches(0.8), Inches(5.6), Inches(11.5), Inches(1.3),
     "", 16)
 p = tf.paragraphs[0]
-p.text = "Peak théorique : 51 TFLOPS (FP64 Tensor Core PCIe)  |  Meilleur résultat : 45 110 GFLOPS  |  Efficacité : 88,5%"
+p.text = "Peak théorique : 54 TFLOPS (FP64)  |  Meilleur résultat : 45 110 GFLOPS  |  Efficacité : 83,4%"
 p.font.size = Pt(17)
 p.font.bold = True
 p.font.color.rgb = DARK_BLUE
@@ -339,9 +338,9 @@ shape.line.color.rgb = ACCENT_BLUE
 
 add_text_box(slide, Inches(7.2), Inches(5.1), Inches(5.4), Inches(1.8),
              "Ratio théorique : Peak H100 / Peak A100\n"
-             "= 51 / 19,5 = 2,62x\n\n"
+             "= 54 / 19,5 = 2,77x\n\n"
              "Ratio mesuré (N=100K) : 2,53x\n"
-             "Écart : seulement 3% → HPL exploite bien les 2 architectures",
+             "Écart : ~9% → lié à la différence d'efficacité (83% vs 92%)",
              16, False, DARK_BLUE)
 
 # ============================================================
@@ -353,10 +352,10 @@ add_title_bar(slide, "Synthèse de l'efficacité")
 
 data_eff = [
     ["Configuration", "Peak TC (TFLOPS)", "Meilleur (GFLOPS)", "Efficacité"],
-    ["A100 (1 GPU)", "19,5", "17 860", "91,6%"],
-    ["H100 (1 GPU)", "51,0", "45 110", "88,5%"],
+    ["A100 (1 GPU)", "19,5", "17 860", "91,7%"],
+    ["H100 (1 GPU)", "54,0", "45 110", "83,4%"],
     ["A100 (2 GPUs)", "39,0", "34 720", "89,0%"],
-    ["H100 (2 GPUs)", "102,0", "81 970", "80,4%"],
+    ["H100 (2 GPUs)", "108,0", "81 970", "75,8%"],
 ]
 add_table(slide, Inches(0.5), Inches(1.6), Inches(7), Inches(3), data_eff)
 
@@ -389,10 +388,10 @@ add_bg(slide)
 add_title_bar(slide, "Conclusion et enseignements")
 
 points = [
-    ("HPL est compute-bound", "Efficacités de 88-92% confirment que le calcul (DGEMM) domine", ACCENT_GREEN),
+    ("HPL est compute-bound", "Efficacités de 83-92% confirment que le calcul (DGEMM) domine", ACCENT_GREEN),
     ("La taille du problème est clé", "GFLOPS augmente avec N  (O(N³) calcul vs O(N²) communication)", ACCENT_BLUE),
     ("Le multi-GPU a un seuil", "En dessous de N ≈ 20-40K, 2 GPUs sont contre-productifs", ACCENT_RED),
-    ("H100 ≈ 2,5x l'A100", "Ratio mesuré (2,53x) cohérent avec le ratio théorique (2,62x)", ACCENT_BLUE),
+    ("H100 ≈ 2,5x l'A100", "Ratio mesuré (2,53x) vs ratio théorique (2,77x) — écart dû à l'efficacité", ACCENT_BLUE),
     ("Efficacité vs puissance", "A100 : 97% eff. parallèle / H100 : 91% — communication plus coûteuse sur GPU rapide", ACCENT_RED),
 ]
 
