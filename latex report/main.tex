@@ -1,0 +1,329 @@
+\documentclass[12pt,a4paper]{article}
+
+% ====== Encodage / Langue ======
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz}   
+% ====== Mise en page ======
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{enumitem}
+\setlist[itemize]{label=\raisebox{0.2ex}{\scalebox{0.8}{$\bullet$}}}
+
+% ====== Maths ======
+\usepackage{amsmath,amssymb}
+\usepackage{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+% ====== Figures ======
+\usepackage{graphicx}
+\usepackage{float}
+
+% ====== Liens ======
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+
+% ===================== PAGE DE GARDE =======================
+\begin{titlepage}
+\begin{tikzpicture}[remember picture,overlay]
+
+% Logo Université Paris-Saclay (haut gauche)
+\node[anchor=north west, xshift=1cm, yshift=-1cm] 
+at (current page.north west)
+{\includegraphics[width=4.2cm]{images/universite.png}};
+
+% Logo ENS Paris-Saclay (haut droite)
+\node[anchor=north east, xshift=-1cm, yshift=-1cm] 
+at (current page.north east)
+{\includegraphics[width=4.2cm]{images/ens.png}};
+
+% Logo Master CHPS (bas centre)
+\node[anchor=south, yshift=1.5cm] 
+at (current page.south)
+{\includegraphics[width=6.5cm]{images/chps.png}};
+
+\end{tikzpicture}
+
+\vspace*{5cm}
+
+\begin{center}
+
+{\Huge \textbf{HPL High Performance Linpack Benchmark}\par}
+
+\vspace{1.5cm}
+
+{\Large Projet MPNA \\[0.2cm]
+Méthodes et Programmation Numérique Avancée\par}
+
+\vspace{2cm}
+
+{\Large \textbf{Réalisé par :}\par}
+
+\vspace{0.5cm}
+
+{\Large \textit{BENMALK Achraf}\par}
+\vspace{0.3cm}
+{\Large \textit{BEZINE Mohamed Karim}\par}
+
+\vspace{2cm}
+
+{\Large \textbf{Date :} \today\par}
+
+\end{center}
+
+\end{titlepage}
+
+
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+
+% ==========================================================
+\section{Contexte}
+HPL (High Performance Linpack) est un benchmark fondamental en calcul haute performance qui évalue la capacité de calcul en virgule flottante d’un système. Il est largement utilisé pour mesurer l’efficacité des CPUs et des GPUs lors de la résolution de grands systèmes linéaires denses.
+
+HPL ne mesure pas uniquement la performance brute en gigaflops ou teraflops. Il permet également d’évaluer la gestion du parallélisme, les accès mémoire ainsi que le coût des communications. Il constitue ainsi un outil essentiel pour l’optimisation et la comparaison des systèmes HPC.
+
+% ==========================================================
+\section{Caractéristiques du Benchmark HPL}
+
+HPL mesure la vitesse de résolution d’un système linéaire dense de la forme :
+
+\[
+Ax = b
+\]
+
+où \(A\) est une matrice dense de grande taille.
+
+Il s’agit du benchmark utilisé pour classer les supercalculateurs dans la liste TOP500.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.7]{images/hpl-parameters.png}
+    \caption{Paramètres principaux du benchmark HPL}
+\end{figure}
+
+Les paramètres principaux sont :
+
+\begin{itemize}
+    \item \textbf{N} : taille globale de la matrice.
+    \item \textbf{NB} : taille des blocs.
+    \item \textbf{P × Q} : grille de processus MPI.
+\end{itemize}
+
+La matrice est distribuée selon une stratégie \textbf{block-cyclic} afin d’équilibrer la charge entre les processus et de minimiser les communications.
+
+% ==========================================================
+\section{Fichier d'entrée HPL.dat}
+
+Le benchmark nécessite un fichier de configuration nommé \texttt{HPL.dat}.  
+Ce fichier définit :
+
+\begin{itemize}
+    \item Les tailles de matrices testées
+    \item Les tailles de blocs
+    \item La grille de processus MPI
+    \item Les paramètres algorithmiques
+    \item La tolérance de vérification du résidu
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.9]{images/hpl-dat.png}
+    \caption{Exemple de fichier HPL.dat}
+\end{figure}
+
+HPL explore différentes combinaisons de paramètres afin d’identifier la configuration optimale.
+
+% ==========================================================
+\section{Étapes d'exécution}
+
+Les étapes principales sont :
+
+\begin{enumerate}
+    \item Création du fichier \texttt{HPL.dat}
+    \item Lancement du conteneur Singularity
+    \item Allocation des ressources GPU via Slurm
+    \item Exécution du benchmark avec MPI
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=1]{images/Step1.png}
+    \caption{Création du fichier HPL.dat}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=1]{images/Step2.png}
+    \caption{Binding du dossier dans le conteneur}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=1]{images/Step3.png}
+    \caption{Configuration persistante du bind}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=1]{images/Step4.png}
+    \caption{Exécution du benchmark}
+\end{figure}
+
+Commande principale :
+
+\begin{verbatim}
+mpirun -np 1 ./hpl.sh --dat /mnt/HPL.dat
+\end{verbatim}
+
+% ==========================================================
+\section{Partition A100}
+
+\subsection{1 GPU, 1 Processus MPI}
+
+\begin{verbatim}
+salloc -t 4:00:00 -n 1 --ntasks=1 -p gpu --gres=gpu:1
+\end{verbatim}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+N & Temps (s) & Gflops \\
+\hline
+20000 & 0.51 & 9731 \\
+40000 & 1.63 & 15890 \\
+60000 & 8.36 & 17150 \\
+80000 & 19.01 & 17600 \\
+100000 & 36.94 & 17860 \\
+\hline
+\end{tabular}
+\caption{Résultats sur 1 GPU A100}
+\end{table}
+
+Pic théorique A100 :
+
+\[
+6912 \times 2 \times 1.41 \approx 19{,}5 \text{ TFLOPS}
+\]
+
+Efficacité maximale :
+
+\[
+\frac{17860}{19487} \times 100 \approx 91{,}7\%
+\]
+
+% ==========================================================
+\subsection{2 GPU, 2 Processus MPI, 1 Processus MPI/GPU}
+
+\begin{verbatim}
+salloc -t 4:00:00 -n 1 --gres=gpu:2
+\end{verbatim}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+N & Temps (s) & Gflops \\
+\hline
+20000 & 0.55 & 9106 \\
+40000 & 1.66 & 25230 \\
+60000 & 4.56 & 31430 \\
+80000 & 9.98 & 33560 \\
+100000 & 19.00 & 34720 \\
+\hline
+\end{tabular}
+\caption{Résultats sur 2 GPUs A100}
+\end{table}
+
+Speedup :
+
+\[
+\frac{34720}{17860} \approx 1{,}95
+\]
+
+Efficacité parallèle ≈ 97\%.
+
+% ==========================================================
+\section{Partition H100}
+
+\subsection{1 GPU, 1 Processus MPI}
+
+\begin{verbatim}
+salloc -t 4:00:00 -n 1 -p gpu_h100 --gres=gpu:1
+\end{verbatim}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+N & Temps (s) & Gflops \\
+\hline
+20000 & 0.31 & 16130 \\
+40000 & 1.17 & 35760 \\
+60000 & 3.43 & 41760 \\
+80000 & 7.57 & 44130 \\
+100000 & 11.43 & 45110 \\
+\hline
+\end{tabular}
+\caption{Résultats sur 1 GPU H100}
+\end{table}
+
+Pic théorique H100 :
+
+\[
+16896 \times 2 \times 1.6 \approx 54 \text{ TFLOPS}
+\]
+
+% ==========================================================
+\subsection{2 GPU, 2 Processus MPI, 1 Processus MPI/GPU}
+
+\begin{verbatim}
+salloc -t 4:00:00 -n 1 --ntasks=2 -p gpu_h100 --gres=gpu:2
+\end{verbatim}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+N & Temps (s) & Gflops \\
+\hline
+20000 & 0.40 & 11510 \\
+40000 & 1.01 & 41460 \\
+60000 & 1.11 & 64700 \\
+80000 & 4.36 & 76730 \\
+100000 & 7.95 & 81970 \\
+\hline
+\end{tabular}
+\caption{Résultats sur 2 GPUs H100}
+\end{table}
+
+% ==========================================================
+\section{Analyse comparative A100 vs H100}
+
+Le GPU H100 surpasse clairement le A100 pour toutes les tailles de matrices testées.
+
+On observe :
+
+\begin{itemize}
+    \item Un débit Gflops plus élevé
+    \item Une meilleure scalabilité
+    \item Des temps d’exécution plus courts
+    \item Une architecture plus avancée (Hopper vs Ampere)
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=1]{images/a100-h100-hpl.png}
+    \caption{Comparaison A100 vs H100}
+\end{figure}
+
+
+
+
+\end{document}
