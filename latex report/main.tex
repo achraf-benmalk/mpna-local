@@ -142,7 +142,7 @@ HPL explore différentes combinaisons de paramètres afin d’identifier la conf
 % ==========================================================
 \section{Plateforme d'exécution}
 
-Les expériences ont été réalisées sur le supercalculateur \textbf{Toubkal}, opéré par l'Université Mohammed VI Polytechnique (Maroc). Les nœuds GPU utilisés sont équipés de :
+Les expériences ont été réalisées sur un \textbf{cluster HPC} équipé de nœuds GPU. Les partitions utilisées sont :
 
 \begin{itemize}
     \item \textbf{GPU A100} : partition \texttt{gpu}, NVIDIA A100 80\,Go HBM2e (architecture Ampere)
@@ -322,7 +322,7 @@ Efficacité maximale atteinte (à $N = 100\,000$) :
 \eta_{H100} = \frac{45\,110}{51\,000} \times 100 \approx 88{,}5\%
 \]
 
-L'efficacité du H100 est légèrement inférieure à celle de l'A100 (88{,}5\% vs 91{,}6\%). Le H100 possède 2{,}4$\times$ plus de cœurs FP64 CUDA que l'A100 (8\,448 vs 3\,456), ce qui rend plus difficile la saturation complète de toutes les unités de calcul pour une même taille de problème. Pour atteindre une efficacité comparable, des valeurs de $N$ encore plus grandes seraient nécessaires.
+L'efficacité du H100 est légèrement inférieure à celle de l'A100 (88{,}5\% vs 91{,}6\%). Le H100 PCIe possède 2{,}1$\times$ plus de cœurs FP64 CUDA que l'A100 (7\,296 vs 3\,456), ce qui rend plus difficile la saturation complète de toutes les unités de calcul pour une même taille de problème. Pour atteindre une efficacité comparable, des valeurs de $N$ encore plus grandes seraient nécessaires.
 
 % ==========================================================
 \subsection{2 GPU, 2 Processus MPI, 1 Processus MPI/GPU}
@@ -425,7 +425,7 @@ H100 & 16\,130 & 11\,510 & $-28{,}6\%$ \\
 \caption{Dégradation de performance à $N = 20\,000$ en multi-GPU}
 \end{table}
 
-Avec un problème de petite taille ($N = 20\,000$), chaque GPU reçoit une portion de matrice trop réduite pour saturer ses milliers de cœurs CUDA. Le coût de synchronisation et d'échange de données entre les deux GPUs dépasse alors le bénéfice du parallélisme supplémentaire. Ce phénomène est plus prononcé sur H100 ($-28{,}6\%$) car ce GPU possède davantage de cœurs FP64 à alimenter en données (8\,448 vs 3\,456).
+Avec un problème de petite taille ($N = 20\,000$), chaque GPU reçoit une portion de matrice trop réduite pour saturer ses milliers de cœurs CUDA. Le coût de synchronisation et d'échange de données entre les deux GPUs dépasse alors le bénéfice du parallélisme supplémentaire. Ce phénomène est plus prononcé sur H100 ($-28{,}6\%$) car ce GPU possède davantage de cœurs FP64 à alimenter en données (7\,296 vs 3\,456 pour la variante PCIe).
 
 Il existe donc un seuil de taille de problème en dessous duquel l'ajout de GPUs est contre-productif. Nos données indiquent que ce seuil se situe entre $N = 20\,000$ (dégradation observée) et $N = 40\,000$ (gain observé) pour les deux architectures.
 
@@ -489,7 +489,7 @@ On observe que l'efficacité décroît lorsqu'on passe à des configurations plu
 % ==========================================================
 \section{Conclusion}
 
-Ce travail a permis d'évaluer les performances du benchmark HPL sur deux architectures GPU NVIDIA --- l'A100 (Ampere) et le H100 (Hopper) --- au sein du supercalculateur Toubkal.
+Ce travail a permis d'évaluer les performances du benchmark HPL sur deux architectures GPU NVIDIA --- l'A100 (Ampere) et le H100 (Hopper) --- au sein d'un cluster HPC.
 
 Les principaux enseignements sont :
 
