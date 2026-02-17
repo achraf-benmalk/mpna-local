@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generate the HPL presentation slides (Part 2: Execution, Results, Analysis)."""
+"""Generate the HPL presentation slides (Part 2: Execution, Results, Analysis).
+Styled to match the binome's template (hpl_karim_versionfinale.pptx)."""
 
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
@@ -12,76 +13,80 @@ IMG_DIR = os.path.join(os.path.dirname(__file__), '..', 'latex report', 'images'
 OUT_DIR = os.path.join(os.path.dirname(__file__), 'presentation_finale')
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# Colors
-DARK_BLUE = RGBColor(0x1B, 0x3A, 0x5C)
-ACCENT_BLUE = RGBColor(0x2E, 0x86, 0xC1)
-ACCENT_GREEN = RGBColor(0x27, 0xAE, 0x60)
-ACCENT_RED = RGBColor(0xE7, 0x4C, 0x3C)
+# Template color palette
+DARK_TEAL = RGBColor(0x14, 0x34, 0x40)
+OFF_WHITE = RGBColor(0xFA, 0xF8, 0xF5)
+ORANGE = RGBColor(0xFF, 0x6B, 0x35)
+NEAR_BLACK = RGBColor(0x28, 0x28, 0x28)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-LIGHT_GRAY = RGBColor(0xF2, 0xF3, 0xF4)
-DARK_GRAY = RGBColor(0x2C, 0x3E, 0x50)
-BLACK = RGBColor(0x00, 0x00, 0x00)
+
+SLIDE_W = Inches(10)
+SLIDE_H = Inches(7.5)
 
 prs = Presentation()
-prs.slide_width = Inches(13.333)
-prs.slide_height = Inches(7.5)
+prs.slide_width = SLIDE_W
+prs.slide_height = SLIDE_H
 
-def add_bg(slide, color=WHITE):
-    bg = slide.background
-    fill = bg.fill
-    fill.solid()
-    fill.fore_color.rgb = color
 
-def add_title_bar(slide, text, subtitle=None):
-    """Add a colored top bar with title."""
-    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, prs.slide_width, Inches(1.3))
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = DARK_BLUE
-    shape.line.fill.background()
-    tf = shape.text_frame
-    tf.word_wrap = True
-    p = tf.paragraphs[0]
-    p.text = text
-    p.font.size = Pt(32)
-    p.font.bold = True
-    p.font.color.rgb = WHITE
-    p.alignment = PP_ALIGN.LEFT
-    tf.margin_left = Inches(0.8)
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    if subtitle:
-        p2 = tf.add_paragraph()
-        p2.text = subtitle
-        p2.font.size = Pt(18)
-        p2.font.color.rgb = RGBColor(0xAE, 0xD6, 0xF1)
-        p2.alignment = PP_ALIGN.LEFT
+def add_content_bg(slide):
+    """Off-white background + thin orange left stripe (template pattern)."""
+    bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, SLIDE_W, SLIDE_H)
+    bg.fill.solid()
+    bg.fill.fore_color.rgb = OFF_WHITE
+    bg.line.fill.background()
+    stripe = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, Inches(0.08), SLIDE_H)
+    stripe.fill.solid()
+    stripe.fill.fore_color.rgb = ORANGE
+    stripe.line.fill.background()
 
-def add_text_box(slide, left, top, width, height, text, font_size=18, bold=False, color=DARK_GRAY, alignment=PP_ALIGN.LEFT):
+
+def add_slide_title(slide, text):
+    """Title text + orange accent bar below (template pattern)."""
+    tf = add_text(slide, Inches(0.60), Inches(0.15), Inches(8.5), Inches(0.7),
+                  text, 42, True, DARK_TEAL)
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, Inches(0.95), Inches(2.5), Inches(0.15))
+    bar.fill.solid()
+    bar.fill.fore_color.rgb = ORANGE
+    bar.line.fill.background()
+    return tf
+
+
+def add_text(slide, left, top, width, height, text, size=20, bold=False,
+             color=NEAR_BLACK, align=PP_ALIGN.LEFT):
+    """Add a text box and return the text frame."""
     txBox = slide.shapes.add_textbox(left, top, width, height)
     tf = txBox.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
     p.text = text
-    p.font.size = Pt(font_size)
+    p.font.size = Pt(size)
     p.font.bold = bold
     p.font.color.rgb = color
-    p.alignment = alignment
+    p.alignment = align
     return tf
 
-def add_bullet_list(slide, left, top, width, height, items, font_size=18, color=DARK_GRAY):
-    txBox = slide.shapes.add_textbox(left, top, width, height)
-    tf = txBox.text_frame
-    tf.word_wrap = True
+
+def add_orange_bullet(slide, left, top):
+    """Small orange rounded-rectangle bullet marker (template pattern)."""
+    dot = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, Inches(0.12), Inches(0.12))
+    dot.fill.solid()
+    dot.fill.fore_color.rgb = ORANGE
+    dot.line.fill.background()
+
+
+def add_bullet_items(slide, left, top, width, items, size=16, color=NEAR_BLACK, spacing=0.40):
+    """Add bullet items with orange dot markers."""
     for i, item in enumerate(items):
-        if i == 0:
-            p = tf.paragraphs[0]
-        else:
-            p = tf.add_paragraph()
-        p.text = item
-        p.font.size = Pt(font_size)
-        p.font.color.rgb = color
-        p.space_after = Pt(8)
-        p.level = 0
-    return tf
+        y = top + Inches(i * spacing)
+        add_orange_bullet(slide, left, y + Inches(0.05))
+        add_text(slide, left + Inches(0.25), y, width - Inches(0.25), Inches(0.35),
+                 item, size, False, color)
+
+
+def add_sub_heading(slide, left, top, text):
+    """Orange sub-heading (template pattern)."""
+    add_text(slide, left, top, Inches(8), Inches(0.45), text, 24, True, ORANGE)
+
 
 def add_table(slide, left, top, width, height, data, col_widths=None):
     rows, cols = len(data), len(data[0])
@@ -95,107 +100,123 @@ def add_table(slide, left, top, width, height, data, col_widths=None):
             cell = table.cell(r, c)
             cell.text = str(val)
             for paragraph in cell.text_frame.paragraphs:
-                paragraph.font.size = Pt(14)
+                paragraph.font.size = Pt(13)
                 paragraph.alignment = PP_ALIGN.CENTER
                 if r == 0:
                     paragraph.font.bold = True
                     paragraph.font.color.rgb = WHITE
+                else:
+                    paragraph.font.color.rgb = NEAR_BLACK
             if r == 0:
                 cell.fill.solid()
-                cell.fill.fore_color.rgb = DARK_BLUE
+                cell.fill.fore_color.rgb = DARK_TEAL
             elif r % 2 == 0:
                 cell.fill.solid()
-                cell.fill.fore_color.rgb = LIGHT_GRAY
+                cell.fill.fore_color.rgb = RGBColor(0xF0, 0xEE, 0xEB)
     return table
 
+
 # ============================================================
-# SLIDE 1: Title
+# SLIDE 1: Title (dark teal background, matching template slide 1)
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
-add_bg(slide, DARK_BLUE)
-add_text_box(slide, Inches(1), Inches(1.5), Inches(11), Inches(1.5),
-             "HPL Benchmark : Implémentation GPU", 44, True, WHITE, PP_ALIGN.CENTER)
-add_text_box(slide, Inches(1), Inches(3.2), Inches(11), Inches(1),
-             "Résultats et Analyse Comparative A100 vs H100", 28, False, RGBColor(0xAE, 0xD6, 0xF1), PP_ALIGN.CENTER)
-add_text_box(slide, Inches(1), Inches(5), Inches(11), Inches(0.5),
-             "Partie 2 : Exécution, Résultats, Analyse", 20, False, RGBColor(0xD5, 0xDB, 0xDB), PP_ALIGN.CENTER)
-add_text_box(slide, Inches(1), Inches(6), Inches(11), Inches(0.5),
-             "BENMALK Achraf  |  Projet MPNA  |  2026", 18, False, RGBColor(0x85, 0x92, 0x9E), PP_ALIGN.CENTER)
+bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, SLIDE_W, SLIDE_H)
+bg.fill.solid()
+bg.fill.fore_color.rgb = DARK_TEAL
+bg.line.fill.background()
+
+add_text(slide, Inches(0.6), Inches(1.5), Inches(8.5), Inches(1),
+         "HPL Benchmark : Résultats GPU", 48, True, WHITE)
+# Orange accent bar
+bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, Inches(2.7), Inches(5.5), Inches(0.15))
+bar.fill.solid()
+bar.fill.fore_color.rgb = ORANGE
+bar.line.fill.background()
+add_text(slide, Inches(0.6), Inches(3.1), Inches(8.5), Inches(0.8),
+         "Analyse comparative A100 vs H100", 30, False, WHITE)
+add_text(slide, Inches(0.6), Inches(4.2), Inches(8.5), Inches(0.5),
+         "Partie 2 : Exécution, Résultats, Analyse", 20, False, RGBColor(0xCC, 0xCC, 0xCC))
+add_text(slide, Inches(0.6), Inches(5.2), Inches(8.5), Inches(0.5),
+         "BENMALK Achraf  |  Projet MPNA  |  2026", 18, False, RGBColor(0x99, 0x99, 0x99))
 
 # ============================================================
 # SLIDE 2: Plateforme d'exécution
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Plateforme d'exécution")
+add_content_bg(slide)
+add_slide_title(slide, "Plateforme d'exécution")
 
-add_text_box(slide, Inches(0.8), Inches(1.6), Inches(5.5), Inches(0.5),
-             "Environnement", 22, True, DARK_BLUE)
-add_bullet_list(slide, Inches(0.8), Inches(2.2), Inches(5.5), Inches(2.5), [
+add_sub_heading(slide, Inches(0.6), Inches(1.25), "Environnement")
+add_bullet_items(slide, Inches(0.6), Inches(1.75), Inches(4.5), [
     "Cluster HPC avec nœuds GPU NVIDIA",
-    "Conteneur : NVIDIA HPC-Benchmarks 23.10 (Singularity)",
-    "Bibliothèques : cuBLAS + NCCL",
-    "Ordonnanceur : Slurm",
-    "HPL utilise les Tensor Cores FP64 pour DGEMM",
-], 17)
+    "Conteneur NVIDIA HPC-Benchmarks 23.10",
+    "Déploiement via Singularity",
+    "Ordonnanceur Slurm",
+], 15, spacing=0.35)
 
-add_text_box(slide, Inches(7), Inches(1.6), Inches(5.5), Inches(0.5),
-             "GPUs testés", 22, True, DARK_BLUE)
-
+add_sub_heading(slide, Inches(5.3), Inches(1.25), "GPUs testés")
 data = [
-    ["", "A100 (Ampere)", "H100 (Hopper)"],
+    ["", "A100", "H100"],
+    ["Architecture", "Ampere", "Hopper"],
     ["Partition", "gpu", "gpu_h100"],
-    ["Variante", "SXM / 80 Go HBM2e", "PCIe / 80 Go HBM3"],
+    ["Mémoire", "80 Go HBM2e", "80 Go HBM3"],
     ["Cœurs CUDA", "6 912", "16 896"],
     ["Peak FP64", "19,5 TFLOPS", "54 TFLOPS"],
 ]
-add_table(slide, Inches(7), Inches(2.2), Inches(5.5), Inches(3), data)
+add_table(slide, Inches(5.3), Inches(1.75), Inches(4.3), Inches(2.5), data)
 
-add_text_box(slide, Inches(0.8), Inches(5.2), Inches(11), Inches(0.5),
-             "Configuration HPL", 22, True, DARK_BLUE)
-add_bullet_list(slide, Inches(0.8), Inches(5.8), Inches(11), Inches(1.5), [
-    "NB = 576 (blocs larges pour saturer les cœurs GPU — vs NB = 128-256 sur CPU)",
-    "P × Q = 2 × 1  (1 processus MPI par GPU)   |   BCAST = 6 (broadcast MPI)",
-], 17)
+add_sub_heading(slide, Inches(0.6), Inches(4.65), "Configuration HPL")
+add_bullet_items(slide, Inches(0.6), Inches(5.15), Inches(8.5), [
+    "NB = 576 (blocs larges pour saturer les cœurs GPU)",
+    "P × Q = 2 × 1 (1 processus MPI par GPU)",
+    "BCAST = 6 (broadcast MPI)",
+], 15, spacing=0.35)
 
 # ============================================================
-# SLIDE 3: Étapes d'exécution
+# SLIDE 3: Étapes d'exécution (2x2 grid for 4:3)
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Étapes d'exécution sur GPU")
+add_content_bg(slide)
+add_slide_title(slide, "Étapes d'exécution sur GPU")
 
 steps = [
-    ("1. HPL.dat", "Création du fichier de\nconfiguration (N, NB, P×Q)", "Step1.png"),
-    ("2. Singularity", "Lancement du conteneur\navec bind du répertoire", "Step2.png"),
+    ("1. HPL.dat", "Création du fichier de configuration\n(N, NB, P×Q)", "Step1.png"),
+    ("2. Singularity", "Lancement du conteneur avec\nbind du répertoire", "Step2.png"),
     ("3. Slurm", "Allocation GPU via salloc\n(--gres=gpu:1 ou gpu:2)", "Step3.png"),
     ("4. Exécution", "mpirun -np <X> ./hpl.sh\n--dat /mnt/HPL.dat", "Step4.png"),
 ]
 
+positions = [
+    (Inches(0.4), Inches(1.3)),   # top-left
+    (Inches(4.9), Inches(1.3)),   # top-right
+    (Inches(0.4), Inches(4.3)),   # bottom-left
+    (Inches(4.9), Inches(4.3)),   # bottom-right
+]
+
 for i, (title, desc, img) in enumerate(steps):
-    x = Inches(0.5 + i * 3.2)
-    # Step box
-    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, Inches(1.6), Inches(2.8), Inches(5.2))
+    x, y = positions[i]
+    box_w, box_h = Inches(4.4), Inches(2.8)
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, box_w, box_h)
     shape.fill.solid()
-    shape.fill.fore_color.rgb = LIGHT_GRAY
-    shape.line.color.rgb = ACCENT_BLUE
+    shape.fill.fore_color.rgb = RGBColor(0xF0, 0xEE, 0xEB)
+    shape.line.color.rgb = ORANGE
     shape.line.width = Pt(1.5)
 
-    add_text_box(slide, x + Inches(0.1), Inches(1.7), Inches(2.6), Inches(0.5),
-                 title, 20, True, DARK_BLUE, PP_ALIGN.CENTER)
-    add_text_box(slide, x + Inches(0.1), Inches(2.3), Inches(2.6), Inches(1),
-                 desc, 14, False, DARK_GRAY, PP_ALIGN.CENTER)
+    add_text(slide, x + Inches(0.15), y + Inches(0.1), Inches(2), Inches(0.4),
+             title, 18, True, DARK_TEAL)
+    add_text(slide, x + Inches(0.15), y + Inches(0.5), Inches(2), Inches(0.7),
+             desc, 12, False, NEAR_BLACK)
 
     img_path = os.path.join(IMG_DIR, img)
     if os.path.exists(img_path):
-        slide.shapes.add_picture(img_path, x + Inches(0.15), Inches(3.4), Inches(2.5))
+        slide.shapes.add_picture(img_path, x + Inches(2.2), y + Inches(0.15), Inches(2.0))
 
 # ============================================================
 # SLIDE 4: Résultats A100
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Résultats : GPU A100 (Ampere)")
+add_content_bg(slide)
+add_slide_title(slide, "Résultats : GPU A100")
 
 data_a100 = [
     ["N", "1 GPU (GFLOPS)", "2 GPUs (GFLOPS)", "Speedup"],
@@ -203,37 +224,29 @@ data_a100 = [
     ["40 000", "15 890", "25 230", "1,59x"],
     ["60 000", "17 150", "31 430", "1,83x"],
     ["80 000", "17 600", "33 560", "1,91x"],
-    ["100 000", "17 860", "34 720", "1,94x"],
+    ["100 000", "17 860", "34 720", "1,95x"],
 ]
-add_table(slide, Inches(0.5), Inches(1.6), Inches(6), Inches(3.5), data_a100)
+add_table(slide, Inches(0.4), Inches(1.25), Inches(4.5), Inches(2.8), data_a100)
 
 img_path = os.path.join(IMG_DIR, 'hpl-a100.png')
 if os.path.exists(img_path):
-    slide.shapes.add_picture(img_path, Inches(6.8), Inches(1.6), Inches(6))
+    slide.shapes.add_picture(img_path, Inches(5.1), Inches(1.25), Inches(4.6))
 
-# Key metrics box
-shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.5), Inches(5.5), Inches(12), Inches(1.5))
-shape.fill.solid()
-shape.fill.fore_color.rgb = RGBColor(0xEB, 0xF5, 0xFB)
-shape.line.color.rgb = ACCENT_BLUE
-tf = add_text_box(slide, Inches(0.8), Inches(5.6), Inches(11.5), Inches(1.3),
-    "", 16)
-p = tf.paragraphs[0]
-p.text = "Peak théorique : 19,5 TFLOPS (FP64)  |  Meilleur résultat : 17 860 GFLOPS  |  Efficacité : 91,7%"
-p.font.size = Pt(17)
-p.font.bold = True
-p.font.color.rgb = DARK_BLUE
-p2 = tf.add_paragraph()
-p2.text = "Speedup 2 GPUs : 1,95x (efficacité parallèle 97%)  |  Tous les tests : PASSED"
-p2.font.size = Pt(16)
-p2.font.color.rgb = ACCENT_GREEN
+# Key metrics
+add_sub_heading(slide, Inches(0.6), Inches(4.3), "Métriques clés")
+add_bullet_items(slide, Inches(0.6), Inches(4.85), Inches(8.5), [
+    "Peak théorique : 19,5 TFLOPS  →  Efficacité : 91,7%",
+    "Speedup 2 GPUs : 1,95x  →  Efficacité parallèle : 97%",
+    "Anomalie à N=20K : 2 GPUs légèrement plus lents que 1",
+    "Tous les tests : résidu PASSED",
+], 15, spacing=0.38)
 
 # ============================================================
 # SLIDE 5: Résultats H100
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Résultats : GPU H100 (Hopper)")
+add_content_bg(slide)
+add_slide_title(slide, "Résultats : GPU H100")
 
 data_h100 = [
     ["N", "1 GPU (GFLOPS)", "2 GPUs (GFLOPS)", "Speedup"],
@@ -243,83 +256,76 @@ data_h100 = [
     ["80 000", "44 130", "76 730", "1,74x"],
     ["100 000", "45 110", "81 970", "1,82x"],
 ]
-add_table(slide, Inches(0.5), Inches(1.6), Inches(6), Inches(3.5), data_h100)
+add_table(slide, Inches(0.4), Inches(1.25), Inches(4.5), Inches(2.8), data_h100)
 
 img_path = os.path.join(IMG_DIR, 'hpl-h100.png')
 if os.path.exists(img_path):
-    slide.shapes.add_picture(img_path, Inches(6.8), Inches(1.6), Inches(6))
+    slide.shapes.add_picture(img_path, Inches(5.1), Inches(1.25), Inches(4.6))
 
-shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.5), Inches(5.5), Inches(12), Inches(1.5))
-shape.fill.solid()
-shape.fill.fore_color.rgb = RGBColor(0xFD, 0xED, 0xEC)
-shape.line.color.rgb = ACCENT_RED
-tf = add_text_box(slide, Inches(0.8), Inches(5.6), Inches(11.5), Inches(1.3),
-    "", 16)
-p = tf.paragraphs[0]
-p.text = "Peak théorique : 54 TFLOPS (FP64)  |  Meilleur résultat : 45 110 GFLOPS  |  Efficacité : 83,4%"
-p.font.size = Pt(17)
-p.font.bold = True
-p.font.color.rgb = DARK_BLUE
-p2 = tf.add_paragraph()
-p2.text = "Speedup 2 GPUs : 1,82x (efficacité parallèle 91%)  |  Anomalie N=20K : 2 GPUs 28,6% plus lents que 1 !"
-p2.font.size = Pt(16)
-p2.font.color.rgb = ACCENT_RED
+add_sub_heading(slide, Inches(0.6), Inches(4.3), "Métriques clés")
+add_bullet_items(slide, Inches(0.6), Inches(4.85), Inches(8.5), [
+    "Peak théorique : 54 TFLOPS  →  Efficacité : 83,4%",
+    "Speedup 2 GPUs : 1,82x  →  Efficacité parallèle : 91%",
+    "Anomalie à N=20K : 2 GPUs 28,6% PLUS LENTS que 1 !",
+    "Tous les tests : résidu PASSED",
+], 15, spacing=0.38)
 
 # ============================================================
 # SLIDE 6: Anomalie multi-GPU à N=20K
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Anomalie : 2 GPUs plus lents qu'un seul (N = 20 000)")
+add_content_bg(slide)
+add_slide_title(slide, "Anomalie multi-GPU (N = 20 000)")
 
 data_anomaly = [
     ["GPU", "1 GPU (GFLOPS)", "2 GPUs (GFLOPS)", "Dégradation"],
     ["A100", "9 731", "9 106", "-6,4%"],
     ["H100", "16 130", "11 510", "-28,6%"],
 ]
-add_table(slide, Inches(0.5), Inches(1.8), Inches(5.5), Inches(1.5), data_anomaly)
+add_table(slide, Inches(0.4), Inches(1.35), Inches(5), Inches(1.3), data_anomaly)
 
-add_text_box(slide, Inches(0.5), Inches(3.6), Inches(5.5), Inches(0.5),
-             "Pourquoi ?", 22, True, ACCENT_RED)
-add_bullet_list(slide, Inches(0.5), Inches(4.2), Inches(5.8), Inches(3), [
+add_sub_heading(slide, Inches(0.6), Inches(2.9), "Pourquoi ?")
+add_bullet_items(slide, Inches(0.6), Inches(3.4), Inches(5), [
     "N = 20 000 est trop petit pour 2 GPUs",
-    "Chaque GPU reçoit une portion de matrice insuffisante",
-    "Le coût de communication inter-GPU > le gain de calcul",
-    "Plus prononcé sur H100 (-28,6%) : plus de cœurs à alimenter",
-    "Seuil de rentabilité : entre N = 20K et N = 40K",
-], 17)
+    "Portion de matrice insuffisante par GPU",
+    "Coût de communication > gain de calcul",
+    "Plus prononcé sur H100 : plus de cœurs",
+    "Seuil de rentabilité : N entre 20K et 40K",
+], 14, spacing=0.35)
 
-# Right side: visual explanation
-shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(1.8), Inches(5.8), Inches(5))
-shape.fill.solid()
-shape.fill.fore_color.rgb = LIGHT_GRAY
-shape.line.color.rgb = DARK_BLUE
+# Right side: explanation box
+box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                              Inches(5.6), Inches(1.35), Inches(4.1), Inches(4.3))
+box.fill.solid()
+box.fill.fore_color.rgb = RGBColor(0xF0, 0xEE, 0xEB)
+box.line.color.rgb = ORANGE
+box.line.width = Pt(1.5)
 
-add_text_box(slide, Inches(7), Inches(2), Inches(5.4), Inches(0.5),
-             "Analogie", 20, True, DARK_BLUE, PP_ALIGN.CENTER)
-add_text_box(slide, Inches(7.2), Inches(2.6), Inches(5), Inches(4),
-             "Petit problème (N=20K) :\n"
-             "  2 cuisiniers pour 1 petit plat\n"
-             "  = plus de temps à se coordonner\n"
-             "    qu'à cuisiner\n\n"
-             "Grand problème (N=100K) :\n"
-             "  2 cuisiniers pour un banquet\n"
-             "  = chacun est occupé à cuisiner,\n"
-             "    la coordination est négligeable\n\n"
-             "Calcul : O(N³)    Communication : O(N²)\n"
-             "Grand N → calcul domine → meilleure efficacité",
-             15, False, DARK_GRAY)
+add_text(slide, Inches(5.8), Inches(1.5), Inches(3.7), Inches(0.4),
+         "Explication", 20, True, DARK_TEAL, PP_ALIGN.CENTER)
+
+add_text(slide, Inches(5.8), Inches(2.0), Inches(3.7), Inches(3.5),
+         "Petit problème (N=20K) :\n"
+         "  2 cuisiniers pour 1 petit plat\n"
+         "  = coordination > cuisine\n\n"
+         "Grand problème (N=100K) :\n"
+         "  2 cuisiniers pour un banquet\n"
+         "  = coordination négligeable\n\n"
+         "Calcul : O(N³)\n"
+         "Communication : O(N²)\n"
+         "Grand N → calcul domine",
+         13, False, NEAR_BLACK)
 
 # ============================================================
 # SLIDE 7: Comparaison A100 vs H100
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Comparaison architecturale : A100 vs H100")
+add_content_bg(slide)
+add_slide_title(slide, "Comparaison A100 vs H100")
 
 img_path = os.path.join(IMG_DIR, 'a100-h100-hpl.png')
 if os.path.exists(img_path):
-    slide.shapes.add_picture(img_path, Inches(0.3), Inches(1.5), Inches(6.5))
+    slide.shapes.add_picture(img_path, Inches(0.3), Inches(1.25), Inches(5.2))
 
 data_ratio = [
     ["N", "A100", "H100", "Ratio"],
@@ -329,98 +335,83 @@ data_ratio = [
     ["80K", "17 600", "44 130", "2,51x"],
     ["100K", "17 860", "45 110", "2,53x"],
 ]
-add_table(slide, Inches(7), Inches(1.5), Inches(5.8), Inches(3.2), data_ratio)
+add_table(slide, Inches(5.6), Inches(1.25), Inches(4.1), Inches(2.8), data_ratio)
 
-shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7), Inches(5), Inches(5.8), Inches(2))
-shape.fill.solid()
-shape.fill.fore_color.rgb = RGBColor(0xEB, 0xF5, 0xFB)
-shape.line.color.rgb = ACCENT_BLUE
+# Ratio explanation box
+box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                              Inches(5.6), Inches(4.3), Inches(4.1), Inches(2.5))
+box.fill.solid()
+box.fill.fore_color.rgb = RGBColor(0xF0, 0xEE, 0xEB)
+box.line.color.rgb = ORANGE
+box.line.width = Pt(1.5)
 
-add_text_box(slide, Inches(7.2), Inches(5.1), Inches(5.4), Inches(1.8),
-             "Ratio théorique : Peak H100 / Peak A100\n"
-             "= 54 / 19,5 = 2,77x\n\n"
-             "Ratio mesuré (N=100K) : 2,53x\n"
-             "Écart : ~9% → lié à la différence d'efficacité (83% vs 92%)",
-             16, False, DARK_BLUE)
+add_text(slide, Inches(5.8), Inches(4.45), Inches(3.7), Inches(2.2),
+         "Ratio théorique :\n"
+         "  54 / 19,5 = 2,77x\n\n"
+         "Ratio mesuré (N=100K) :\n"
+         "  2,53x\n\n"
+         "Écart ~9% → dû à la différence\n"
+         "d'efficacité (83% vs 92%)",
+         14, False, DARK_TEAL)
 
 # ============================================================
 # SLIDE 8: Synthèse de l'efficacité
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Synthèse de l'efficacité")
+add_content_bg(slide)
+add_slide_title(slide, "Synthèse de l'efficacité")
 
 data_eff = [
-    ["Configuration", "Peak TC (TFLOPS)", "Meilleur (GFLOPS)", "Efficacité"],
+    ["Configuration", "Peak (TFLOPS)", "Meilleur (GFLOPS)", "Efficacité"],
     ["A100 (1 GPU)", "19,5", "17 860", "91,7%"],
     ["H100 (1 GPU)", "54,0", "45 110", "83,4%"],
     ["A100 (2 GPUs)", "39,0", "34 720", "89,0%"],
     ["H100 (2 GPUs)", "108,0", "81 970", "75,8%"],
 ]
-add_table(slide, Inches(0.5), Inches(1.6), Inches(7), Inches(3), data_eff)
+add_table(slide, Inches(0.4), Inches(1.25), Inches(9.2), Inches(2.5), data_eff)
 
-add_text_box(slide, Inches(8), Inches(1.6), Inches(4.8), Inches(0.5),
-             "Observations clés", 22, True, DARK_BLUE)
-add_bullet_list(slide, Inches(8), Inches(2.3), Inches(4.8), Inches(4.5), [
-    "Toutes les configs > 80% d'efficacité",
-    "HPL est compute-bound : le calcul domine",
-    "L'efficacité diminue avec la puissance",
-    "A100 : meilleure efficacité (plus facile à saturer)",
-    "H100 : performance brute supérieure",
-    "Compromis puissance vs. efficacité",
-], 17)
+add_sub_heading(slide, Inches(0.6), Inches(4.0), "Observations")
+add_bullet_items(slide, Inches(0.6), Inches(4.55), Inches(8.5), [
+    "L'efficacité diminue avec la puissance de la configuration",
+    "HPL est compute-bound : le calcul (DGEMM) domine le temps d'exécution",
+    "A100 : plus facile à saturer → meilleure efficacité",
+    "H100 : performance brute supérieure mais utilisation plus difficile",
+], 15, spacing=0.38)
 
-# Bottom key takeaway
-shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.5), Inches(5.2), Inches(12), Inches(1.8))
-shape.fill.solid()
-shape.fill.fore_color.rgb = DARK_BLUE
-shape.line.fill.background()
-add_text_box(slide, Inches(0.8), Inches(5.3), Inches(11.5), Inches(1.5),
-             "Conclusion : Plus un GPU est puissant, plus il est difficile d'exploiter 100% de sa capacité.\n"
-             "La taille du problème (N) et les paramètres de tuning (NB, P×Q) sont déterminants.",
-             20, True, WHITE, PP_ALIGN.CENTER)
+# Bottom takeaway bar
+bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, Inches(6.3), SLIDE_W, Inches(0.9))
+bar.fill.solid()
+bar.fill.fore_color.rgb = DARK_TEAL
+bar.line.fill.background()
+add_text(slide, Inches(0.6), Inches(6.4), Inches(8.8), Inches(0.7),
+         "Plus un GPU est puissant, plus il est difficile d'exploiter 100% de sa capacité.",
+         18, True, WHITE, PP_ALIGN.CENTER)
 
 # ============================================================
 # SLIDE 9: Conclusion
 # ============================================================
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-add_bg(slide)
-add_title_bar(slide, "Conclusion et enseignements")
+add_content_bg(slide)
+add_slide_title(slide, "Conclusion")
 
 points = [
-    ("HPL est compute-bound", "Efficacités de 83-92% confirment que le calcul (DGEMM) domine", ACCENT_GREEN),
-    ("La taille du problème est clé", "GFLOPS augmente avec N  (O(N³) calcul vs O(N²) communication)", ACCENT_BLUE),
-    ("Le multi-GPU a un seuil", "En dessous de N ≈ 20-40K, 2 GPUs sont contre-productifs", ACCENT_RED),
-    ("H100 ≈ 2,5x l'A100", "Ratio mesuré (2,53x) vs ratio théorique (2,77x) — écart dû à l'efficacité", ACCENT_BLUE),
-    ("Efficacité vs puissance", "A100 : 97% eff. parallèle / H100 : 91% — communication plus coûteuse sur GPU rapide", ACCENT_RED),
+    "HPL est compute-bound — efficacités de 83 à 92%",
+    "La taille du problème est déterminante — O(N³) calcul vs O(N²) communication",
+    "Le multi-GPU a un seuil de rentabilité — N entre 20K et 40K",
+    "H100 offre un gain de ≈2,5x sur l'A100 — ratio mesuré 2,53x vs théorique 2,77x",
+    "L'efficacité parallèle diminue avec la puissance — 97% A100 vs 91% H100",
 ]
 
-for i, (title, desc, color) in enumerate(points):
-    y = Inches(1.6 + i * 1.1)
-    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.5), y, Inches(12), Inches(0.95))
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = LIGHT_GRAY
-    shape.line.color.rgb = color
-    shape.line.width = Pt(2)
+for i, point in enumerate(points):
+    y = Inches(1.4 + i * 1.05)
+    add_orange_bullet(slide, Inches(0.6), y + Inches(0.06))
+    add_text(slide, Inches(0.9), y, Inches(8.5), Inches(0.3),
+             point, 18, True, NEAR_BLACK)
 
-    # Number circle
-    num_shape = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(0.7), y + Inches(0.15), Inches(0.65), Inches(0.65))
-    num_shape.fill.solid()
-    num_shape.fill.fore_color.rgb = color
-    num_shape.line.fill.background()
-    tf = num_shape.text_frame
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    p = tf.paragraphs[0]
-    p.text = str(i + 1)
-    p.font.size = Pt(22)
-    p.font.bold = True
-    p.font.color.rgb = WHITE
-    p.alignment = PP_ALIGN.CENTER
-
-    add_text_box(slide, Inches(1.6), y + Inches(0.05), Inches(10.5), Inches(0.45),
-                 title, 19, True, DARK_BLUE)
-    add_text_box(slide, Inches(1.6), y + Inches(0.5), Inches(10.5), Inches(0.4),
-                 desc, 15, False, DARK_GRAY)
+# Takeaway
+add_text(slide, Inches(0.6), Inches(6.5), Inches(8.8), Inches(0.5),
+         "Puissance brute, passage à l'échelle et dimensionnement du problème sont étroitement liés.",
+         16, False, DARK_TEAL, PP_ALIGN.CENTER)
 
 # Save
 output_path = os.path.join(OUT_DIR, 'HPL_Resultats_Analyse.pptx')
