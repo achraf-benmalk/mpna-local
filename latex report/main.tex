@@ -1,29 +1,100 @@
+% ============================================================
+%  Rapport principal — HPL High Performance Linpack Benchmark
+%  + Section intégrée : Mini-HPL parallèle avec MPI (pédagogique)
+%  Overleaf ready — Compiler: pdflatex (2 passes)
+% ============================================================
+
 \documentclass[12pt,a4paper]{article}
 
 % ====== Encodage / Langue ======
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[french]{babel}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{tikz}   
+
 % ====== Mise en page ======
-\usepackage{geometry}
-\geometry{margin=2.5cm}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{parskip}
+
 \usepackage{enumitem}
 \setlist[itemize]{label=\raisebox{0.2ex}{\scalebox{0.8}{$\bullet$}}}
 
 % ====== Maths ======
 \usepackage{amsmath,amssymb}
-\usepackage{tocloft}
-\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
-% ====== Figures ======
+\usepackage{bm}
+
+% ====== Figures / Graphiques ======
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{tikz}
+
+% ====== Table des matières stylée (points) ======
+\usepackage{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% ====== Tableaux ======
+\usepackage{booktabs}
+\usepackage{array}
+
+% ====== Code (Mini-HPL) ======
+\usepackage{listings}
+\usepackage{xcolor}
+
+% ====== Boîtes (Mini-HPL) ======
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable, skins}
+
+% ====== En-têtes ======
+\usepackage{fancyhdr}
 
 % ====== Liens ======
 \usepackage[hidelinks]{hyperref}
+% (si tu veux des liens en bleu: remplace hidelinks par)
+% \usepackage{hyperref}
+% \hypersetup{colorlinks=true, linkcolor=blue!70!black, urlcolor=blue!70!black}
 
+% ============================================================
+%  Styles Mini-HPL (listings + tcolorbox)
+% ============================================================
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{keywd}{RGB}{0,0,180}
+\definecolor{comment}{RGB}{60,120,60}
+\definecolor{string}{RGB}{160,0,0}
+
+\lstdefinestyle{cstyle}{
+  language=C,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{keywd}\bfseries,
+  commentstyle=\color{comment}\itshape,
+  stringstyle=\color{string},
+  numberstyle=\tiny\color{gray},
+  numbers=left, stepnumber=1, numbersep=8pt,
+  breaklines=true,
+  frame=single, framerule=0.4pt, rulecolor=\color{gray!50},
+  tabsize=4, showstringspaces=false, captionpos=b,
+  morekeywords={MPI_Init,MPI_Finalize,MPI_Comm_rank,MPI_Comm_size,
+                MPI_Bcast,MPI_Barrier,MPI_Wtime,MPI_Allreduce,
+                MPI_Sendrecv,MPI_Reduce,MPI_Abort,
+                MPI_COMM_WORLD,MPI_DOUBLE,MPI_DOUBLE_INT,
+                MPI_MAXLOC,MPI_MAX,MPI_STATUS_IGNORE}
+}
+\lstset{style=cstyle}
+
+\newtcolorbox{remarque}[1][]{
+  colback=yellow!10, colframe=orange!70!black,
+  fonttitle=\bfseries, title=Remarque, breakable, #1}
+\newtcolorbox{adef}[1][]{
+  colback=blue!5, colframe=blue!50!black,
+  fonttitle=\bfseries, title=Définition, breakable, #1}
+\newtcolorbox{exemple}[1][]{
+  colback=green!5, colframe=green!50!black,
+  fonttitle=\bfseries, title=Exemple à la main, breakable, #1}
+\newtcolorbox{correction}[1][]{
+  colback=red!5, colframe=red!60!black,
+  fonttitle=\bfseries, title=Correction appliquée, breakable, #1}
+
+% ============================================================
 \begin{document}
 
 % ===================== PAGE DE GARDE =======================
@@ -31,17 +102,17 @@
 \begin{tikzpicture}[remember picture,overlay]
 
 % Logo Université Paris-Saclay (haut gauche)
-\node[anchor=north west, xshift=1cm, yshift=-1cm] 
+\node[anchor=north west, xshift=1cm, yshift=-1cm]
 at (current page.north west)
 {\includegraphics[width=4.2cm]{images/universite.png}};
 
 % Logo ENS Paris-Saclay (haut droite)
-\node[anchor=north east, xshift=-1cm, yshift=-1cm] 
+\node[anchor=north east, xshift=-1cm, yshift=-1cm]
 at (current page.north east)
 {\includegraphics[width=4.2cm]{images/ens.png}};
 
 % Logo Master CHPS (bas centre)
-\node[anchor=south, yshift=1.5cm] 
+\node[anchor=south, yshift=1.5cm]
 at (current page.south)
 {\includegraphics[width=6.5cm]{images/chps.png}};
 
@@ -76,12 +147,21 @@ Méthodes et Programmation Numérique Avancée\par}
 
 \end{titlepage}
 
+% ====== En-tête à partir d'ici (optionnel mais pratique) ======
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textbf{Projet MPNA — HPL / Mini-HPL}}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{15pt}
 
+\newpage
+
+% ====== Tables ======
 \tableofcontents
 \listoffigures
 \listoftables
 \newpage
-
 % ==========================================================
 \section{Contexte}
 HPL (High Performance Linpack) est un benchmark fondamental en calcul haute performance qui évalue la capacité de calcul en virgule flottante d’un système. Il est largement utilisé pour mesurer l’efficacité des CPUs et des GPUs lors de la résolution de grands systèmes linéaires denses.
@@ -477,7 +557,7 @@ H100 (2 GPUs) & 108{,}0 & 81\,970 & 75{,}8\% \\
 On observe que l'efficacité décroît lorsqu'on passe à des configurations plus puissantes. Plus le pic théorique est élevé, plus il est difficile de l'exploiter pleinement. L'A100 atteint une excellente efficacité de 91{,}7\% grâce à un ratio cœurs/performance mieux maîtrisé, tandis que le H100 2 GPUs descend à 75{,}8\%. Cela témoigne néanmoins de la nature \textit{compute-bound} du benchmark HPL et de la qualité de l'implémentation GPU fournie par NVIDIA dans le conteneur HPC-Benchmarks.
 
 % ==========================================================
-\section{Conclusion}
+\subsection{Conclusion}
 
 Ce travail a permis d'évaluer les performances du benchmark HPL sur deux architectures GPU NVIDIA --- l'A100 (Ampere) et le H100 (Hopper) --- au sein d'un cluster HPC.
 
@@ -496,6 +576,260 @@ Les principaux enseignements sont :
 \end{enumerate}
 
 Ces résultats illustrent les compromis fondamentaux du calcul haute performance : puissance brute, passage à l'échelle, et dimensionnement du problème sont étroitement liés. L'optimisation des paramètres HPL (taille de matrice, taille de bloc, grille de processus) reste essentielle pour exploiter au mieux les architectures modernes.
+% ==========================================================
+%  SECTION INTÉGRÉE : Mini-HPL (version longue pédagogique)
+% ==========================================================
+\section{Mini-HPL parallèle avec MPI}
+\label{sec:mini-hpl}
+\subsection{Rappels mathématiques}
+
+\subsubsection*{Système linéaire et élimination de Gauss}
+
+On cherche $x \in \mathbb{R}^N$ tel que $Ax=b$,
+avec $A \in \mathbb{R}^{N\times N}$ inversible.
+On travaille sur la matrice augmentée $[A \mid b]$.
+
+À l'étape $k$, on annule les coefficients de la colonne $k$ pour toutes les lignes $i>k$ :
+\begin{equation}
+  \ell_{ik} = \frac{a_{ik}}{a_{kk}}, \qquad
+  \text{ligne}_i \leftarrow \text{ligne}_i - \ell_{ik}\cdot\text{ligne}_k
+\end{equation}
+
+\subsubsection*{Complexité et GFLOPS}
+
+Le nombre d'opérations flottantes est $W \approx \frac{2}{3}N^3$.
+La performance est donc :
+\[
+  \text{GFLOPS}_{\text{approx}} =
+  \frac{\frac{2}{3}N^3}{t_{\text{élim}} \times 10^9}.
+\]
+
+\subsubsection*{Pivotage partiel}
+
+Sans pivotage, l'algorithme est instable si $a_{kk}$ est petit.
+Le pivotage partiel permute la ligne $k$ avec la ligne $p$ telle que :
+\[
+  p = \arg\max_{i \geq k} |a_{ik}|.
+\]
+
+\subsection{Exemple à la main — Gauss avec pivotage ($N=3$)}
+
+\begin{exemple}
+Soit le système $Ax=b$ avec :
+\[
+A = \begin{pmatrix} 1&2&1\\3&8&1\\0&4&1 \end{pmatrix},\quad
+b = \begin{pmatrix}2\\12\\2\end{pmatrix}.
+\]
+
+\textbf{Étape $k=0$} : max en colonne 0 = $|a_{10}|=3$.
+On échange $L_0 \leftrightarrow L_1$ :
+\[
+\left(\begin{array}{ccc|c}3&8&1&12\\1&2&1&2\\0&4&1&2\end{array}\right).
+\]
+$\ell_{10}=\frac{1}{3}$, $\ell_{20}=0$.
+$L_1 \leftarrow L_1 - \frac{1}{3}L_0$ :
+\[
+\left(\begin{array}{ccc|c}3&8&1&12\\0&-\frac{2}{3}&\frac{2}{3}&-2\\0&4&1&2\end{array}\right).
+\]
+
+\textbf{Étape $k=1$} : max en colonne 1 (lignes $\geq 1$) = $|a_{21}|=4$.
+Échange $L_1 \leftrightarrow L_2$ :
+\[
+\left(\begin{array}{ccc|c}3&8&1&12\\0&4&1&2\\0&-\frac{2}{3}&\frac{2}{3}&-2\end{array}\right).
+\]
+$\ell_{21}=\frac{-2/3}{4}=-\frac{1}{6}$.
+$L_2 \leftarrow L_2 + \frac{1}{6}L_1$ :
+\[
+\left(\begin{array}{ccc|c}3&8&1&12\\0&4&1&2\\0&0&\frac{5}{6}&-\frac{5}{3}\end{array}\right).
+\]
+
+\textbf{Back-substitution} :
+$x_2 = \frac{-5/3}{5/6} = -2$,\quad
+$x_1 = \frac{2 - 1\cdot(-2)}{4} = 1$,\quad
+$x_0 = \frac{12 - 8\cdot 1 - 1\cdot(-2)}{3} = 2$.
+
+\textbf{Solution} : $x=(2,1,-2)^\top$. \checkmark
+\end{exemple}
+
+\subsection{Architecture MPI : distribution bloc-cyclique}
+
+\begin{adef}
+Avec $P$ processus et une taille de bloc $NB$, la ligne globale $i$
+appartient au processus :
+\[
+  \texttt{OWNER}(i) = \left\lfloor \frac{i}{NB} \right\rfloor \bmod P.
+\]
+Son indice local sur ce processus est :
+\[
+  \texttt{LOCAL\_LI}(i) =
+  \left\lfloor \frac{\lfloor i/NB \rfloor}{P} \right\rfloor \cdot NB
+  + (i \bmod NB).
+\]
+\end{adef}
+
+\begin{exemple}
+$N=12$, $NB=2$, $P=3$.
+\begin{center}
+\begin{tabular}{c|cccccccccccc}
+\toprule
+Ligne globale & 0&1&2&3&4&5&6&7&8&9&10&11\\
+\midrule
+Processus     & 0&0&1&1&2&2&0&0&1&1&2&2\\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{exemple}
+
+\begin{remarque}[title={Contrainte simplificatrice}]
+Dans notre Mini-HPL, $N$ doit être divisible par $NB \times P$.
+Cela évite la gestion des blocs partiels (présente dans ScaLAPACK/HPL).
+\end{remarque}
+
+\subsection{Explication du code}
+
+\subsubsection*{Macros d'indexation}
+
+\begin{lstlisting}[caption={Macros définies avant main()}]
+/* Acces element (i,j) dans tableau row-major de largeur N */
+#define IDX(i, j, N)  ((i) * (N) + (j))
+
+/* Distribution bloc-cyclique (NB et size visibles dans la portee) */
+#define OWNER(gi)     (((gi) / NB) % size)
+#define LOCAL_LI(gi)  ((((gi) / NB) / size) * NB + (gi) % NB)
+\end{lstlisting}
+
+\subsubsection*{Initialisation}
+
+\begin{lstlisting}[caption={Matrice diagonalement dominante}]
+void initialize_matrix(double *A, double *b,
+                        int N, int NB,
+                        int local_rows, int rank, int size)
+{
+    for (int li = 0; li < local_rows; li++) {
+        int panel_local  = li / NB;
+        int within_panel = li % NB;
+        int global_i = (panel_local * size + rank) * NB + within_panel;
+        for (int j = 0; j < N; j++) {
+            if (j == global_i)
+                A[IDX(li,j,N)] = (double)N + (double)(global_i+j+1)/N;
+            else
+                A[IDX(li,j,N)] = (double)(global_i+j+1)/N;
+        }
+        b[li] = 1.0;
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Étape 1 — Recherche du pivot : \texttt{MPI\_DOUBLE\_INT}}
+
+\begin{lstlisting}[caption={Réduction MAXLOC (type standard C)}]
+struct { double val; int idx; } local_cand, global_cand;
+local_cand.val = 0.0;
+local_cand.idx = -1;
+
+/* ... calcul local du max dans la colonne k ... */
+
+MPI_Allreduce(&local_cand, &global_cand, 1,
+              MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+
+int pivot_gi    = global_cand.idx;
+int pivot_owner = OWNER(pivot_gi);
+int pivot_li    = LOCAL_LI(pivot_gi);
+\end{lstlisting}
+
+
+\subsubsection*{Étape 2 — Échange de lignes (\texttt{MPI\_Sendrecv})}
+
+\begin{lstlisting}[caption={Swap entre processus sans deadlock}]
+MPI_Sendrecv(tmp_row,  N+1, MPI_DOUBLE, pivot_owner, 0,
+             pivot_row, N+1, MPI_DOUBLE, pivot_owner, 0,
+             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+\end{lstlisting}
+
+\subsubsection*{Étape 3 — Broadcast de la ligne pivot}
+
+\begin{lstlisting}[caption={Diffusion de la ligne pivot + b}]
+MPI_Bcast(pivot_row, N+1, MPI_DOUBLE, k_owner, MPI_COMM_WORLD);
+\end{lstlisting}
+
+\subsubsection*{Vérification du pivot et arrêt propre}
+
+\begin{lstlisting}[caption={Arrêt immédiat si pivot quasi-nul}]
+double pivot_val = pivot_row[k];
+if (fabs(pivot_val) < 1e-14) {
+    if (rank == 0)
+        fprintf(stderr,
+            "ERREUR : pivot quasi-nul a k=%d (|pivot|=%.2e). Arret.\n",
+            k, fabs(pivot_val));
+    MPI_Abort(MPI_COMM_WORLD, 2);
+}
+\end{lstlisting}
+
+\subsubsection*{Étape 4 — Mise à jour SAXPY}
+
+\begin{lstlisting}[caption={Mise a jour in-place + LU}]
+double factor = A[IDX(li, k, N)] / pivot_val;
+for (int j = k; j < N; j++)
+    A[IDX(li, j, N)] -= factor * pivot_row[j];
+b_vec[li]        -= factor * pivot_row[N];
+A[IDX(li, k, N)]  = factor;   /* stocke L in-place */
+\end{lstlisting}
+
+\subsection{Back-substitution}
+
+On résout $Ux=b$ de $k=N-1$ à $0$ :
+\[
+  x_k = \frac{b_k - \sum_{j=k+1}^{N-1} u_{kj}x_j}{u_{kk}}.
+\]
+
+\begin{lstlisting}[caption={Back-substitution parallèle}]
+MPI_Bcast(&x_k, 1, MPI_DOUBLE, k_owner, MPI_COMM_WORLD);
+\end{lstlisting}
+
+\subsection{Résiduelle normée HPL}
+
+\[
+  r = \frac{\|Ax - b\|_\infty}{\|A\|_\infty \cdot \|x\|_\infty
+      \cdot N \cdot \varepsilon}
+  \qquad \text{PASSED si } r < 16,
+\]
+avec $\varepsilon = 2{,}22 \times 10^{-16}$.
+
+\begin{lstlisting}[caption={Réduction des normes (MPI_MAX)}]
+MPI_Reduce(&local_res_norm, &global_res_norm, 1,
+           MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+MPI_Reduce(&local_A_norm, &global_A_norm, 1,
+           MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+\end{lstlisting}
+
+\subsection{Tableau récapitulatif des communications MPI}
+
+\begin{center}
+\begin{tabular}{llll}
+  \toprule
+  \textbf{Fonction} & \textbf{Type} & \textbf{Étape} & \textbf{Rôle} \\
+  \midrule
+  \texttt{MPI\_Allreduce} & \texttt{MPI\_DOUBLE\_INT} & Pivot & Pivot max global (MAXLOC) \\
+  \texttt{MPI\_Sendrecv}  & \texttt{MPI\_DOUBLE}      & Swap  & Échange de lignes \\
+  \texttt{MPI\_Bcast}     & \texttt{MPI\_DOUBLE}      & Gauss & Diffusion ligne pivot \\
+  \texttt{MPI\_Bcast}     & \texttt{MPI\_DOUBLE}      & Back-sub & Diffusion $x_k$ \\
+  \texttt{MPI\_Reduce}    & \texttt{MPI\_MAX}         & Check & Normes globales \\
+  \texttt{MPI\_Barrier}   & --                        & Timing & Synchronisation \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Compilation et exécution}
+
+\begin{lstlisting}[language=bash, caption={Compilation et lancement}]
+mpicc -O2 -Wall -o mini_hpl mini_hpl.c -lm
+mpirun -np 4 ./mini_hpl 1024
+# Contrainte : N divisible par NB*P
+\end{lstlisting}
+
+\subsection{Conclusion}
+
+Cette implémentation du Mini-HPL parallèle illustre les principes fondamentaux du benchmark HPL : élimination de Gauss avec pivotage partiel, distribution bloc-cyclique des données et coordination via communications MPI. Les opérations collectives (\texttt{MPI\_Allreduce}, \texttt{MPI\_Bcast}, \texttt{MPI\_Reduce}) assurent la cohérence globale du calcul, tandis que le coût dominant reste en $\mathcal{O}(N^3)$. La vérification par la résiduelle normée garantit la validité numérique des résultats. Ce Mini-HPL constitue ainsi une base pédagogique pour comprendre le fonctionnement interne d’un benchmark HPC parallèle.
 
 % ==========================================================
 \begin{thebibliography}{9}
