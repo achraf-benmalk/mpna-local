@@ -829,7 +829,7 @@ mpirun -np 4 ./mini_hpl 1024
 
 \subsection{Conclusion}
 
-Cette implémentation du Mini-HPL parallèle illustre les principes fondamentaux du benchmark HPL : élimination de Gauss avec pivotage partiel, distribution bloc-cyclique des données et coordination via communications MPI. Les opérations collectives (\texttt{MPI\_Allreduce}, \texttt{MPI\_Bcast}, \texttt{MPI\_Reduce}) assurent la cohérence globale du calcul, tandis que le coût dominant reste en $\mathcal{O}(N^3)$. La vérification par la résiduelle normée garantit la validité numérique des résultats. Ce Mini-HPL constitue ainsi une base pédagogique pour comprendre le fonctionnement interne d’un benchmark HPC parallèle.
+Cette implémentation du Mini-HPL parallèle illustre les principes fondamentaux du benchmark HPL : élimination de Gauss avec pivotage partiel, distribution bloc-cyclique des données et coordination via communications MPI. Les opérations collectives (\texttt{MPI\_Allreduce}, \texttt{MPI\_Bcast}, \texttt{MPI\_Reduce}) assurent la cohérence globale du calcul, tandis que le coût dominant reste en $\mathcal{O}(N^3)$. La vérification par la résiduelle normée garantit la validité numérique des résultats. Ce Mini-HPL constitue ainsi une base pédagogique pour comprendre le fonctionnement interne d'un benchmark HPC parallèle. Le code source complet est reproduit en annexe~\ref{app:source}.
 
 % ==========================================================
 \begin{thebibliography}{9}
@@ -850,5 +850,18 @@ NVIDIA Corporation, \textit{NVIDIA H100 Tensor Core GPU --- Datasheet}, 2022. \u
 NVIDIA Corporation, \textit{NVIDIA HPC-Benchmarks Container}, NGC Catalog. \url{https://catalog.ngc.nvidia.com/orgs/nvidia/containers/hpc-benchmarks}
 
 \end{thebibliography}
+
+% ==========================================================
+\appendix
+\section{Code source complet : Mini-HPL}
+\label{app:source}
+
+Le fichier \texttt{mini\_hpl.c} ci-dessous constitue l'implémentation complète du Mini-HPL parallèle avec MPI, tel que décrit en section~\ref{sec:mini-hpl}. Il est fourni en tant que livrable séparé avec ce rapport.
+
+\lstinputlisting[
+  style=cstyle,
+  caption={mini\_hpl.c --- Code source complet},
+  label={lst:full-source}
+]{../project/mini_hpl.c.txt}
 
 \end{document}
